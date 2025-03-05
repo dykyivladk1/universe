@@ -62,7 +62,6 @@ http://localhost:3000
 
 - `app.py`: Main Flask application
 - `templates/`: HTML templates for the web interface
-- `static/`: CSS, JavaScript, and other static files
 - `chat_histories.json`: Persistent storage for all chat histories
 
 ## Key Features Explained
