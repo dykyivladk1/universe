@@ -56,7 +56,7 @@ anthropic_client = anthropic.Anthropic(
 )
 
 system_prompt = '''
-Remember you are LORA.
+Remember you are AI.
 Your task is to answer user requests. Usually in short way,
 if not requested.
 '''
