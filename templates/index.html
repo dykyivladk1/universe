@@ -1,2091 +1,2176 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Universe</title>
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome for icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- PrismJS for code highlighting - using Okaidia theme for dark mode -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" rel="stylesheet">
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
-
-
-    <style>
-        :root {
-            /* Layout variables */
-            --sidebar-width: 280px;
-            --header-height: 64px;
-            --footer-height: 74px;
-            --card-border-radius: 12px;
-            --btn-border-radius: 8px;
-            --message-border-radius: 12px;
-            --input-border-radius: 8px;
-            --sidebar-transition: 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-
-            /* Dark theme (default) */
-            --primary-color: #8c5ac8;
-            --primary-hover: #7a4bb6;
-            --primary-gradient: linear-gradient(135deg, #8c5ac8, #a77ae0);
-            --secondary-color: #b8b8b8;
-            --border-color: #3a3a3a;
-            --bg-color: #1e1e1e;
-            --message-user-bg: rgba(140, 90, 200, 0.15);
-            --message-assistant-bg: #2a2a2a;
-            --text-color: #e0e0e0;
-            --text-muted: #a0a0a0;
-            --accent-color: #8c5ac8;
-            --glass-bg: rgba(30, 30, 30, 0.9);
-            --glass-border: rgba(58, 58, 58, 0.8);
-            --glass-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            --paper-texture: none; /* No paper texture in dark mode */
-            --code-bg: rgba(40, 40, 40, 0.9);
-            --code-border: #3a3a3a;
-            --input-bg: rgba(40, 40, 40, 0.8);
-            --hover-bg: rgba(60, 60, 60, 0.3);
-        }
-
-        /* Light theme */
-        .light-theme {
-            --primary-color: #8c5ac8;
-            --primary-hover: #7a4bb6;
-            --primary-gradient: linear-gradient(135deg, #8c5ac8, #a77ae0);
-            --secondary-color: #4a4a4a;
-            --border-color: #dcd6e9;
-            --bg-color: #f8f6fc;
-            --message-user-bg: rgba(140, 90, 200, 0.1);
-            --message-assistant-bg: #ffffff;
-            --text-color: #333333;
-            --text-muted: #6d677a;
-            --accent-color: #8c5ac8;
-            --glass-bg: rgba(248, 246, 252, 0.9);
-            --glass-border: rgba(220, 214, 233, 0.8);
-            --glass-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-            --paper-texture: none; /* Also remove paper texture in light mode */
-            --code-bg: rgba(255, 255, 255, 0.9);
-            --code-border: #dcd6e9;
-            --input-bg: rgba(255, 255, 255, 0.8);
-            --hover-bg: rgba(220, 214, 233, 0.3);
-        }
-
-        body {
-            font-family: 'Roboto', sans-serif;
-            height: 100vh;
-            overflow: hidden;
-            background-color: var(--bg-color);
-            background-image: var(--paper-texture);
-            color: var(--text-color);
-            margin: 0;
-            font-weight: 400;
-            font-size: 18px;
-            letter-spacing: 0.01em;
-            transition: background-color 0.3s ease, color 0.3s ease;
-        }
-        /* Entrance animation overlay */
-        .entrance-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: var(--bg-color);
-            background-image: var(--paper-texture);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 10000;
-            animation: fadeOut 1.5s ease-out 2.5s forwards;
-            transition: background-color 0.3s ease;
-        }
-
-        .logo-animation {
-            text-align: center;
-        }
-
-        .logo-text {
-            font-size: 3.5rem;
-            font-weight: 700;
-            color: transparent;
-            background: var(--primary-gradient);
-            background-clip: text;
-            -webkit-background-clip: text;
-            letter-spacing: 0.05em;
-            position: relative;
-            display: inline-block;
-        }
-
-        .logo-text::after {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 0;
-            height: 100%;
-            width: 100%;
-            border-right: 3px solid var(--primary-color);
-            background-color: var(--bg-color);
-            animation: typewriter 2s steps(10) forwards;
-            transition: background-color 0.3s ease;
-        }
-
-        @keyframes typewriter {
-            to {
-                width: 0;
-            }
-        }
-
-        @keyframes fadeOut {
-            to {
-                opacity: 0;
-                visibility: hidden;
-            }
-        }
-
-        /* Layout styling */
-        .app-container {
-            display: flex;
-            height: 100vh;
-            overflow: hidden;
-            opacity: 0;
-            animation: fadeIn 0.8s ease-out 3s forwards;
-            transition: all var(--sidebar-transition);
-        }
-
-        @keyframes fadeIn {
-            to {
-                opacity: 1;
-            }
-        }
-
-        .sidebar {
-            width: var(--sidebar-width);
-            height: 100vh;
-            overflow-y: auto;
-            border-right: 1px solid var(--border-color);
-            background-color: var(--glass-bg);
-            transition: transform var(--sidebar-transition), 
-                        background-color 0.3s ease, 
-                        border-color 0.3s ease,
-                        box-shadow var(--sidebar-transition);
-            z-index: 1000;
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            opacity: 0;
-            transform: translateX(-20px);
-            animation: slideIn 0.5s ease-out 3.2s forwards;
-            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.05);
-        }
-
-        /* Improved sidebar hiding with smooth animation */
-        .hide-sidebar .sidebar {
-            transform: translateX(-100%) !important;
-            box-shadow: none !important;
-            position: fixed;
-        }
-
-        .hide-sidebar .main-content {
-            margin-left: 0 !important;
-            width: 100% !important;
-        }
-
-        @keyframes slideIn {
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
-        }
-
-        .main-content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            overflow: hidden;
-            background-color: var(--bg-color);
-            background-image: var(--paper-texture);
-            transition: margin-left var(--sidebar-transition),
-                        width var(--sidebar-transition),
-                        background-color 0.3s ease;
-            margin-left: 0;
-            width: calc(100% - var(--sidebar-width));
-        }
-
-        .chat-header {
-            height: var(--header-height);
-            border-bottom: 1px solid var(--border-color);
-            padding: 0 1.75rem;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            background-color: var(--glass-bg);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            position: sticky;
-            top: 0;
-            z-index: 10;
-            opacity: 0;
-            transform: translateY(-10px);
-            animation: slideDown 0.5s ease-out 3.4s forwards;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-            transition: background-color 0.3s ease, border-color 0.3s ease;
-        }
-
-        @keyframes slideDown {
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .chat-messages {
-            flex: 1;
-            overflow-y: auto;
-            padding: 1.75rem;
-            padding-bottom: 2rem;
-            background-color: transparent;
-            overflow-x: hidden;
-            scroll-behavior: smooth;
-            opacity: 0;
-            animation: fadeIn 0.8s ease-out 3.6s forwards;
-        }
-
-        .chat-input-container {
-            min-height: var(--footer-height);
-            border-top: 1px solid var(--border-color);
-            padding: 1.25rem 1.75rem;
-            background-color: var(--glass-bg);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            position: sticky;
-            bottom: 0;
-            width: 100%;
-            box-sizing: border-box;
-            opacity: 0;
-            transform: translateY(10px);
-            animation: slideUp 0.5s ease-out 3.8s forwards;
-            box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.05);
-            transition: background-color 0.3s ease, border-color 0.3s ease;
-        }
-
-        @keyframes slideUp {
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        /* Message styling */
-        .message {
-            margin-bottom: 1.75rem;
-            padding: 1.5rem;
-            border-radius: var(--message-border-radius);
-            max-width: 94%;
-            position: relative;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-            transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.3s ease, border-color 0.3s ease;
-            animation: messageAppear 0.3s ease-out forwards;
-            border: 1px solid var(--border-color);
-        }
-
-        @keyframes messageAppear {
-            0% { 
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            100% { 
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .message:hover {
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-        }
-
-        .message-user {
-            background-color: var(--message-user-bg);
-            margin-left: auto;
-            border-top-right-radius: 4px;
-        }
-
-        .message-assistant {
-            background-color: var(--message-assistant-bg);
-            margin-right: auto;
-            border-top-left-radius: 4px;
-            border-left: 3px solid var(--primary-color);
-        }
-
-        .message-content {
-            line-height: 1.65;
-            color: var(--text-color);
-        }
-
-        .message-actions {
-            position: absolute;
-            top: 1rem;
-            right: 1rem;
-            opacity: 0;
-            transition: opacity 0.2s ease;
-            display: flex;
-            gap: 0.5rem;
-        }
-
-        .message:hover .message-actions {
-            opacity: 1;
-        }
-
-        /* Sidebar styling */
-        .new-chat-btn {
-            width: 100%;
-            margin: 1.25rem 0;
-            background: var(--primary-gradient);
-            border: none;
-            padding: 0.875rem;
-            font-weight: 500;
-            border-radius: var(--btn-border-radius);
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 6px rgba(138, 112, 71, 0.2);
-            color: white;
-            font-family: Georgia, 'Times New Roman', Times, serif;
-        }
-
-        .new-chat-btn:hover {
-            background: linear-gradient(135deg, var(--primary-hover), var(--primary-color));
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(138, 112, 71, 0.25);
-        }
-
-        .chat-list {
-            list-style: none;
-            padding: 0;
-            margin: 0.5rem 0;
-        }
-
-        .chat-item {
-            padding: 0.875rem 1rem;
-            cursor: pointer;
-            border-radius: 8px;
-            margin: 0.375rem 0.75rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            color: var(--text-color);
-            transition: all 0.2s ease, background-color 0.3s ease, border-color 0.3s ease;
-            border: 1px solid transparent;
-        }
-
-        .chat-item:hover {
-            background-color: var(--hover-bg);
-            border-color: var(--border-color);
-        }
-
-        .chat-item.active {
-            background-color: var(--message-user-bg);
-            font-weight: 500;
-            border-left: 3px solid var(--accent-color);
-        }
-
-        .chat-item-title {
-            flex: 1;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .chat-actions {
-            opacity: 0;
-            transition: opacity 0.2s ease;
-            display: flex;
-            gap: 0.25rem;
-        }
-
-        .chat-item:hover .chat-actions {
-            opacity: 1;
-        }
-
-        /* Input styling */
-        .chat-input-wrapper {
-            display: flex;
-            align-items: flex-end;
-            background-color: var(--input-bg);
-            border: 1px solid var(--border-color);
-            border-radius: var(--input-border-radius);
-            padding: 0.75rem;
-            width: 100%;
-            transition: box-shadow 0.3s ease, border-color 0.3s ease, background-color 0.3s ease;
-            box-sizing: border-box;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-        }
-
-        .chat-input-wrapper:focus-within {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 2px rgba(138, 112, 71, 0.1);
-        }
-
-        .chat-textarea {
-            flex: 1;
-            border: none;
-            outline: none;
-            background: transparent;
-            resize: none;
-            max-height: 250px;
-            padding: 0.75rem 1.25rem;
-            min-height: 60px;
-            color: var(--text-color);
-            font-family: 'Roboto', sans-serif;
-            font-size: 1.2rem;
-            line-height: 1.6;
-            width: 100%;
-            transition: color 0.3s ease;
-        }
-
-        .chat-send-btn {
-            background: var(--primary-gradient);
-            color: white;
-            border: none;
-            border-radius: var(--btn-border-radius);
-            padding: 0.75rem;
-            cursor: pointer;
-            transition: all 0.2s ease, background 0.3s ease;
-            margin-left: 0.5rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-width: 44px;
-            height: 44px;
-        }
-
-        .chat-send-btn:hover:not(:disabled) {
-            background: linear-gradient(135deg, var(--primary-hover), var(--primary-color));
-            transform: translateY(-2px);
-            box-shadow: 0 2px 6px rgba(138, 112, 71, 0.2);
-        }
-
-        .chat-send-btn:disabled {
-            background: var(--border-color);
-            cursor: not-allowed;
-            color: var(--text-muted);
-        }
-
-        /* MODEL SELECTOR IN HEADER (NEW) */
-        .header-model-selector {
-            display: none;
-            margin-left: 1rem;
-            opacity: 0;
-            transition: opacity 0.3s ease, transform 0.3s ease;
-        }
-
-        .hide-sidebar .header-model-selector {
-            display: block;
-            opacity: 1;
-            transform: translateX(0);
-            animation: fadeInSlideRight 0.4s ease forwards;
-        }
-
-        @keyframes fadeInSlideRight {
-            from {
-                opacity: 0;
-                transform: translateX(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
-        }
-
-        /* Sidebar toggle button (enhanced) */
-        .sidebar-toggle {
-            background: transparent;
-            border: none;
-            color: var(--text-color);
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            border: 1px solid var(--border-color);
-            margin-right: 1rem;
-        }
-
-        .sidebar-toggle:hover {
-            background-color: var(--hover-bg);
-            transform: translateY(-1px);
-        }
-
-        .sidebar-toggle i {
-            transition: transform 0.3s ease;
-        }
-
-        .hide-sidebar .sidebar-toggle i {
-            transform: rotate(180deg);
-        }
-
-        /* Mobile optimizations */
-        @media (max-width: 768px) {
-            .sidebar {
-                position: fixed;
-                transform: translateX(-100%);
-            }
-
-            .sidebar.show {
-                transform: translateX(0);
-            }
-
-            .toggle-sidebar {
-                display: block !important;
-            }
-
-            .chat-input-container {
-                padding: 0.85rem;
-            }
-            
-            .entrance-overlay .logo-text {
-                font-size: 2.5rem;
-            }
-        }
-
-        /* Model selector dropdown */
-        .model-selector {
-            position: relative;
-            display: inline-block;
-            width: 100%;
-        }
-
-        .model-label {
-            font-size: 0.875rem;
-            color: var(--text-muted);
-            margin-bottom: 0.5rem;
-            display: block;
-            font-weight: 500;
-            transition: color 0.3s ease;
-        }
-
-        .model-dropdown {
-            width: 100%;
-            padding: 0.75rem 1rem;
-            border: 1px solid var(--border-color);
-            border-radius: var(--btn-border-radius);
-            background-color: var(--input-bg);
-            color: var(--text-color);
-            cursor: pointer;
-            transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.3s ease, color 0.3s ease;
-            appearance: none;
-            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238a7047' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-            background-repeat: no-repeat;
-            background-position: right 10px center;
-            background-size: 16px;
-            font-family: 'Roboto', sans-serif;
-        }
-
-        /* Header model selector dropdown styles */
-        .header-model-dropdown {
-            min-width: 180px;
-            padding: 0.7rem 2.4rem 0.7rem 1rem;
-            border: 1px solid var(--border-color);
-            border-radius: var(--btn-border-radius);
-            background-color: var(--input-bg);
-            color: var(--text-color);
-            font-size: 1.2rem;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238a7047' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-            background-repeat: no-repeat;
-            background-position: right 8px center;
-            background-size: 12px;
-            appearance: none;
-            font-family: Georgia, 'Times New Roman', Times, serif;
-        }
-
-        .header-model-dropdown:hover {
-            border-color: var(--primary-color);
-        }
-
-        .model-dropdown:focus {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 2px rgba(138, 112, 71, 0.1);
-            outline: none;
-        }
-
-        /* Markdown content styling */
-        .markdown-content pre {
-            background-color: var(--code-bg);
-            border-radius: var(--card-border-radius);
-            padding: 1.25rem;
-            overflow-x: auto;
-            position: relative;
-            border: 1px solid var(--code-border);
-            border-left: 3px solid var(--primary-color);
-            margin: 1.25rem 0;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
-            transition: background-color 0.3s ease, border-color 0.3s ease;
-        }
-
-        /* Code copy button */
-        .code-copy-btn {
-            position: absolute;
-            top: 0.85rem;
-            right: 0.85rem;
-            background-color: rgba(138, 112, 71, 0.1);
-            color: var(--text-color);
-            border: 1px solid rgba(138, 112, 71, 0.2);
-            border-radius: 8px;
-            padding: 0.375rem 0.75rem;
-            font-size: 0.75rem;
-            cursor: pointer;
-            opacity: 0;
-            transition: all 0.2s ease, color 0.3s ease, background-color 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 0.25rem;
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        }
-
-        .code-copy-btn:hover {
-            background-color: rgba(138, 112, 71, 0.15);
-        }
-
-        .markdown-content pre:hover .code-copy-btn {
-            opacity: 1;
-        }
-
-        .markdown-content code {
-            font-family: 'Fira Code', monospace;
-            font-size: 0.875rem;
-            color: var(--text-color);
-            transition: color 0.3s ease;
-        }
-
-        .markdown-content p {
-            margin-bottom: 1rem;
-            line-height: 1.7;
-        }
-
-        .markdown-content ul, .markdown-content ol {
-            margin-bottom: 1rem;
-            padding-left: 2rem;
-        }
-
-        .markdown-content table {
-            border-collapse: collapse;
-            width: 100%;
-            margin-bottom: 1.5rem;
-            border-radius: 8px;
-            overflow: hidden;
-            border: 1px solid var(--border-color);
-            transition: border-color 0.3s ease;
-        }
-
-        .markdown-content th, .markdown-content td {
-            border: 1px solid var(--border-color);
-            padding: 0.85rem;
-            transition: border-color 0.3s ease;
-        }
-
-        .markdown-content th {
-            background-color: var(--hover-bg);
-            text-align: left;
-            font-weight: 600;
-            transition: background-color 0.3s ease;
-        }
-
-        .markdown-content a {
-            color: var(--accent-color);
-            text-decoration: none;
-            border-bottom: 1px dashed var(--accent-color);
-            transition: all 0.2s, color 0.3s ease, border-color 0.3s ease;
-        }
-
-        .markdown-content a:hover {
-            border-bottom: 1px solid var(--accent-color);
-            color: var(--primary-hover);
-        }
-
-        /* Add animation for loading */
-        .typing-indicator {
-            display: flex;
-            align-items: center;
-            margin: 1rem 0;
-            padding: 0.85rem 1.25rem;
-            background-color: var(--message-assistant-bg);
-            border-radius: var(--message-border-radius);
-            width: fit-content;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-            animation: fadeIn 0.3s ease-out;
-            border: 1px solid var(--border-color);
-            transition: background-color 0.3s ease, border-color 0.3s ease;
-        }
-
-        .typing-dot {
-            width: 8px;
-            height: 8px;
-            background-color: var(--accent-color);
-            border-radius: 50%;
-            margin: 0 3px;
-            animation: typing-animation 1.5s infinite ease-in-out;
-            transition: background-color 0.3s ease;
-        }
-
-        .typing-dot:nth-child(2) {
-            animation-delay: 0.2s;
-        }
-
-        .typing-dot:nth-child(3) {
-            animation-delay: 0.4s;
-        }
-
-        @keyframes typing-animation {
-            0%, 100% { 
-                transform: translateY(0); 
-                opacity: 0.5;
-            }
-            50% { 
-                transform: translateY(-6px); 
-                opacity: 1;
-            }
-        }
-
-        /* Modern buttons */
-        .btn {
-            border-radius: var(--btn-border-radius);
-            font-weight: 500;
-            transition: all 0.2s ease;
-            font-family: Georgia, 'Times New Roman', Times, serif;
-        }
-
-        .btn-sm {
-            padding: 0.6rem 1rem;
-            font-size: 1.2rem;
-        }
-
-        .btn:active {
-            transform: scale(0.97);
-        }
-
-        /* Theme toggle button */
-        .theme-toggle-btn {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            background-color: var(--message-user-bg);
-            border: 1px solid var(--border-color);
-            color: var(--text-color);
-            cursor: pointer;
-            transition: all 0.2s ease, background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
-            margin-right: 0.75rem;
-        }
-
-        .theme-toggle-btn:hover {
-            background-color: var(--hover-bg);
-            transform: translateY(-2px);
-        }
-
-        /* Modal styling */
-        .modal-content {
-            background-color: var(--bg-color);
-            background-image: var(--paper-texture);
-            color: var(--text-color);
-            border: 1px solid var(--border-color);
-            border-radius: var(--card-border-radius);
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
-        }
-
-        .modal-header {
-            border-bottom: 1px solid var(--border-color);
-            padding: 1.25rem 1.5rem;
-            transition: border-color 0.3s ease;
-        }
-
-        .modal-footer {
-            border-top: 1px solid var(--border-color);
-            padding: 1.25rem 1.5rem;
-            transition: border-color 0.3s ease;
-        }
-
-        .btn-close {
-            color: var(--text-color);
-            filter: none;
-            opacity: 0.7;
-            transition: opacity 0.2s, color 0.3s ease;
-        }
-
-        .btn-close:hover {
-            opacity: 1;
-        }
-
-        .form-control {
-            background-color: var(--input-bg);
-            border: 1px solid var(--border-color);
-            color: var(--text-color);
-            border-radius: var(--btn-border-radius);
-            padding: 0.75rem 1rem;
-            transition: all 0.2s ease, background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
-            font-family: Georgia, 'Times New Roman', Times, serif;
-        }
-
-        .form-control:focus {
-            background-color: var(--input-bg);
-            color: var(--text-color);
-            border-color: var(--accent-color);
-            box-shadow: 0 0 0 2px rgba(138, 112, 71, 0.1);
-        }
-
-        /* Button styles */
-        .btn-outline-secondary {
-            color: var(--text-color);
-            border-color: var(--border-color);
-            border-radius: var(--btn-border-radius);
-            background-color: rgba(255, 255, 255, 0.1);
-            transition: color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease;
-        }
-
-        .btn-outline-secondary:hover {
-            background-color: var(--hover-bg);
-            color: var(--text-color);
-            transform: translateY(-1px);
-            border-color: var(--border-color);
-        }
-
-        .btn-primary {
-            background: var(--primary-gradient);
-            border: none;
-            transition: background 0.3s ease;
-        }
-
-        .btn-primary:hover {
-            background: linear-gradient(135deg, var(--primary-hover), var(--primary-color));
-            transform: translateY(-1px);
-            box-shadow: 0 2px 6px rgba(138, 112, 71, 0.2);
-        }
-
-        .btn-danger {
-            background: linear-gradient(135deg, #c45c5c, #d47e7e);
-            border: none;
-        }
-
-        .btn-danger:hover {
-            background: linear-gradient(135deg, #b45454, #c45c5c);
-            transform: translateY(-1px);
-            box-shadow: 0 2px 6px rgba(196, 92, 92, 0.2);
-        }
-
-        /* Text utilities */
-        .text-muted {
-            color: var(--text-muted) !important;
-            transition: color 0.3s ease;
-        }
-
-        /* Scrollbar customization */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: var(--glass-bg);
-            border-radius: 4px;
-            transition: background-color 0.3s ease;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: var(--border-color);
-            border-radius: 4px;
-            transition: background-color 0.3s ease;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: var(--text-muted);
-        }
-
-        /* Utils */
-        .keyboard-hint {
-            font-size: 0.75rem;
-            opacity: 0.6;
-        }
-
-        .model-info {
-            font-size: 0.75rem;
-            display: flex;
-            align-items: center;
-            gap: 0.25rem;
-            transition: color 0.3s ease;
-        }
-
-        .model-info:before {
-            content: '';
-            display: inline-block;
-            width: 8px;
-            height: 8px;
-            background-color: var(--primary-color);
-            border-radius: 50%;
-            animation: pulse 2s infinite;
-            transition: background-color 0.3s ease;
-        }
-
-        @keyframes pulse {
-            0% {
-                box-shadow: 0 0 0 0 rgba(138, 112, 71, 0.4);
-            }
-            70% {
-                box-shadow: 0 0 0 6px rgba(138, 112, 71, 0);
-            }
-            100% {
-                box-shadow: 0 0 0 0 rgba(138, 112, 71, 0);
-            }
-        }
-
-        /* Fix for input field consistency */
-        .chat-input-wrapper, .chat-textarea {
-            box-sizing: border-box;
-            width: 100%;
-        }
-
-        /* PrismJS theme customization - will automatically adjust with themes */
-        /* Default (dark) theme code syntax */
-        .token.comment,
-        .token.prolog,
-        .token.doctype,
-        .token.cdata {
-            color: #a0a0a0;
-        }
-
-        .token.punctuation {
-            color: #e0e0e0;
-        }
-
-        .token.property,
-        .token.tag,
-        .token.constant,
-        .token.symbol,
-        .token.deleted {
-            color: #a77ae0;
-        }
-
-        .token.boolean,
-        .token.number {
-            color: #b98df2;
-        }
-
-        .token.selector,
-        .token.attr-name,
-        .token.string,
-        .token.char,
-        .token.builtin,
-        .token.inserted {
-            color: #a3c287;
-        }
-
-        .token.operator,
-        .token.entity,
-        .token.url,
-        .language-css .token.string,
-        .style .token.string,
-        .token.variable {
-            color: #e0e0e0;
-        }
-
-        .token.atrule,
-        .token.attr-value,
-        .token.function,
-        .token.class-name {
-            color: #8c5ac8;
-        }
-
-        .token.keyword {
-            color: #8c5ac8;
-        }
-
-        .token.regex,
-        .token.important {
-            color: #c89fff;
-        }
-        
-        /* Light theme token colors */
-        .light-theme .token.comment,
-        .light-theme .token.prolog,
-        .light-theme .token.doctype,
-        .light-theme .token.cdata {
-            color: #6d6d6d;
-        }
-
-        .light-theme .token.punctuation {
-            color: #4a4a4a;
-        }
-
-        .light-theme .token.property,
-        .light-theme .token.tag,
-        .light-theme .token.constant,
-        .light-theme .token.symbol,
-        .light-theme .token.deleted {
-            color: #7a4bb6;
-        }
-
-        .light-theme .token.boolean,
-        .light-theme .token.number {
-            color: #6c41a3;
-        }
-
-        .light-theme .token.selector,
-        .light-theme .token.attr-name,
-        .light-theme .token.string,
-        .light-theme .token.char,
-        .light-theme .token.builtin,
-        .light-theme .token.inserted {
-            color: #507c3c;
-        }
-
-        .light-theme .token.operator,
-        .light-theme .token.entity,
-        .light-theme .token.url,
-        .light-theme .language-css .token.string,
-        .light-theme .style .token.string,
-        .light-theme .token.variable {
-            color: #4a4a4a;
-        }
-
-        .light-theme .token.atrule,
-        .light-theme .token.attr-value,
-        .light-theme .token.function,
-        .light-theme .token.class-name {
-            color: #7a4bb6;
-        }
-
-        .light-theme .token.keyword {
-            color: #8c5ac8;
-        }
-
-        .light-theme .token.regex,
-        .light-theme .token.important {
-            color: #7a4bb6;
-        }
-
-        /* Keyboard navigation focus states */
-        .message.kb-focus {
-            outline: 2px solid var(--primary-color);
-            box-shadow: 0 0 0 4px rgba(140, 90, 200, 0.2);
-        }
-
-        /* Add smooth scroll snap for keyboard navigation */
-        .chat-messages {
-            scroll-snap-type: y proximity;
-            overscroll-behavior-y: contain;
-        }
-
-        .message {
-            scroll-snap-align: start;
-        }
-        pre code {
-        font-family: 'Fira Code', monospace !important;
-    }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Universe</title>
+<!-- Bootstrap CSS -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+<!-- Font Awesome for icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<!-- PrismJS for code highlighting - using Okaidia theme for dark mode -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" rel="stylesheet">
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+
+
+<style>
+/* Add this to your CSS styles section */
+.token-usage {
+font-size: 0.8rem;
+color: var(--text-muted);
+margin-top: 0.75rem;
+padding-top: 0.5rem;
+border-top: 1px solid var(--border-color);
+font-family: 'Roboto', sans-serif;
+transition: color 0.3s ease, border-color 0.3s ease;
+text-align: right;
+}
+
+.token-usage span {
+margin-right: 0.75rem;
+display: inline-flex;
+align-items: center;
+}
+
+.token-usage span:last-child {
+margin-right: 0;
+}
+
+.token-usage span::before {
+content: '';
+display: inline-block;
+width: 6px;
+height: 6px;
+border-radius: 50%;
+margin-right: 4px;
+}
+
+.token-usage .token-input::before {
+background-color: #8c5ac8;
+}
+
+.token-usage .token-output::before {
+background-color: #3cb371;
+}
+
+.token-usage .token-total::before {
+background-color: #f08a5d;
+}
+:root {
+/* Layout variables */
+--sidebar-width: 280px;
+--header-height: 64px;
+--footer-height: 74px;
+--card-border-radius: 12px;
+--btn-border-radius: 8px;
+--message-border-radius: 12px;
+--input-border-radius: 8px;
+--sidebar-transition: 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+
+/* Dark theme (default) */
+--primary-color: #8c5ac8;
+--primary-hover: #7a4bb6;
+--primary-gradient: linear-gradient(135deg, #8c5ac8, #a77ae0);
+--secondary-color: #b8b8b8;
+--border-color: #3a3a3a;
+--bg-color: #1e1e1e;
+--message-user-bg: rgba(140, 90, 200, 0.15);
+--message-assistant-bg: #2a2a2a;
+--text-color: #e0e0e0;
+--text-muted: #a0a0a0;
+--accent-color: #8c5ac8;
+--glass-bg: rgba(30, 30, 30, 0.9);
+--glass-border: rgba(58, 58, 58, 0.8);
+--glass-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+--paper-texture: none; /* No paper texture in dark mode */
+--code-bg: rgba(40, 40, 40, 0.9);
+--code-border: #3a3a3a;
+--input-bg: rgba(40, 40, 40, 0.8);
+--hover-bg: rgba(60, 60, 60, 0.3);
+}
+
+/* Light theme */
+.light-theme {
+--primary-color: #8c5ac8;
+--primary-hover: #7a4bb6;
+--primary-gradient: linear-gradient(135deg, #8c5ac8, #a77ae0);
+--secondary-color: #4a4a4a;
+--border-color: #dcd6e9;
+--bg-color: #f8f6fc;
+--message-user-bg: rgba(140, 90, 200, 0.1);
+--message-assistant-bg: #ffffff;
+--text-color: #333333;
+--text-muted: #6d677a;
+--accent-color: #8c5ac8;
+--glass-bg: rgba(248, 246, 252, 0.9);
+--glass-border: rgba(220, 214, 233, 0.8);
+--glass-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+--paper-texture: none; /* Also remove paper texture in light mode */
+--code-bg: rgba(255, 255, 255, 0.9);
+--code-border: #dcd6e9;
+--input-bg: rgba(255, 255, 255, 0.8);
+--hover-bg: rgba(220, 214, 233, 0.3);
+}
+
+body {
+font-family: 'Roboto', sans-serif;
+height: 100vh;
+overflow: hidden;
+background-color: var(--bg-color);
+background-image: var(--paper-texture);
+color: var(--text-color);
+margin: 0;
+font-weight: 400;
+font-size: 18px;
+letter-spacing: 0.01em;
+transition: background-color 0.3s ease, color 0.3s ease;
+}
+/* Entrance animation overlay */
+.entrance-overlay {
+position: fixed;
+top: 0;
+left: 0;
+width: 100%;
+height: 100%;
+background-color: var(--bg-color);
+background-image: var(--paper-texture);
+display: flex;
+justify-content: center;
+align-items: center;
+z-index: 10000;
+animation: fadeOut 1.5s ease-out 2.5s forwards;
+transition: background-color 0.3s ease;
+}
+
+.logo-animation {
+text-align: center;
+}
+
+.logo-text {
+font-size: 3.5rem;
+font-weight: 700;
+color: transparent;
+background: var(--primary-gradient);
+background-clip: text;
+-webkit-background-clip: text;
+letter-spacing: 0.05em;
+position: relative;
+display: inline-block;
+}
+
+.logo-text::after {
+content: '';
+position: absolute;
+left: 0;
+top: 0;
+height: 100%;
+width: 100%;
+border-right: 3px solid var(--primary-color);
+background-color: var(--bg-color);
+animation: typewriter 2s steps(10) forwards;
+transition: background-color 0.3s ease;
+}
+
+@keyframes typewriter {
+to {
+width: 0;
+}
+}
+
+@keyframes fadeOut {
+to {
+opacity: 0;
+visibility: hidden;
+}
+}
+
+/* Layout styling */
+.app-container {
+display: flex;
+height: 100vh;
+overflow: hidden;
+opacity: 0;
+animation: fadeIn 0.8s ease-out 3s forwards;
+transition: all var(--sidebar-transition);
+}
+
+@keyframes fadeIn {
+to {
+opacity: 1;
+}
+}
+
+.sidebar {
+width: var(--sidebar-width);
+height: 100vh;
+overflow-y: auto;
+border-right: 1px solid var(--border-color);
+background-color: var(--glass-bg);
+transition: transform var(--sidebar-transition), 
+background-color 0.3s ease, 
+border-color 0.3s ease,
+box-shadow var(--sidebar-transition);
+z-index: 1000;
+backdrop-filter: blur(8px);
+-webkit-backdrop-filter: blur(8px);
+opacity: 0;
+transform: translateX(-20px);
+animation: slideIn 0.5s ease-out 3.2s forwards;
+box-shadow: 2px 0 5px rgba(0, 0, 0, 0.05);
+}
+
+/* Improved sidebar hiding with smooth animation */
+.hide-sidebar .sidebar {
+transform: translateX(-100%) !important;
+box-shadow: none !important;
+position: fixed;
+}
+
+.hide-sidebar .main-content {
+margin-left: 0 !important;
+width: 100% !important;
+}
+
+@keyframes slideIn {
+to {
+opacity: 1;
+transform: translateX(0);
+}
+}
+
+.main-content {
+flex: 1;
+display: flex;
+flex-direction: column;
+height: 100vh;
+overflow: hidden;
+background-color: var(--bg-color);
+background-image: var(--paper-texture);
+transition: margin-left var(--sidebar-transition),
+width var(--sidebar-transition),
+background-color 0.3s ease;
+margin-left: 0;
+width: calc(100% - var(--sidebar-width));
+}
+
+.chat-header {
+height: var(--header-height);
+border-bottom: 1px solid var(--border-color);
+padding: 0 1.75rem;
+display: flex;
+align-items: center;
+justify-content: space-between;
+background-color: var(--glass-bg);
+backdrop-filter: blur(8px);
+-webkit-backdrop-filter: blur(8px);
+position: sticky;
+top: 0;
+z-index: 10;
+opacity: 0;
+transform: translateY(-10px);
+animation: slideDown 0.5s ease-out 3.4s forwards;
+box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+@keyframes slideDown {
+to {
+opacity: 1;
+transform: translateY(0);
+}
+}
+
+.chat-messages {
+flex: 1;
+overflow-y: auto;
+padding: 1.75rem;
+padding-bottom: 2rem;
+background-color: transparent;
+overflow-x: hidden;
+scroll-behavior: smooth;
+opacity: 0;
+animation: fadeIn 0.8s ease-out 3.6s forwards;
+}
+
+.chat-input-container {
+min-height: var(--footer-height);
+border-top: 1px solid var(--border-color);
+padding: 1.25rem 1.75rem;
+background-color: var(--glass-bg);
+backdrop-filter: blur(8px);
+-webkit-backdrop-filter: blur(8px);
+position: sticky;
+bottom: 0;
+width: 100%;
+box-sizing: border-box;
+opacity: 0;
+transform: translateY(10px);
+animation: slideUp 0.5s ease-out 3.8s forwards;
+box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.05);
+transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+@keyframes slideUp {
+to {
+opacity: 1;
+transform: translateY(0);
+}
+}
+
+/* Message styling */
+.message {
+margin-bottom: 1.75rem;
+padding: 1.5rem;
+border-radius: var(--message-border-radius);
+max-width: 94%;
+position: relative;
+box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.3s ease, border-color 0.3s ease;
+animation: messageAppear 0.3s ease-out forwards;
+border: 1px solid var(--border-color);
+}
+
+@keyframes messageAppear {
+0% { 
+opacity: 0;
+transform: translateY(10px);
+}
+100% { 
+opacity: 1;
+transform: translateY(0);
+}
+}
+
+.message:hover {
+box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.message-user {
+background-color: var(--message-user-bg);
+margin-left: auto;
+border-top-right-radius: 4px;
+}
+
+.message-assistant {
+background-color: var(--message-assistant-bg);
+margin-right: auto;
+border-top-left-radius: 4px;
+border-left: 3px solid var(--primary-color);
+}
+
+.message-content {
+line-height: 1.65;
+color: var(--text-color);
+}
+
+.message-actions {
+position: absolute;
+top: 1rem;
+right: 1rem;
+opacity: 0;
+transition: opacity 0.2s ease;
+display: flex;
+gap: 0.5rem;
+}
+
+.message:hover .message-actions {
+opacity: 1;
+}
+
+/* Sidebar styling */
+.new-chat-btn {
+width: 100%;
+margin: 1.25rem 0;
+background: var(--primary-gradient);
+border: none;
+padding: 0.875rem;
+font-weight: 500;
+border-radius: var(--btn-border-radius);
+transition: all 0.3s ease;
+box-shadow: 0 2px 6px rgba(138, 112, 71, 0.2);
+color: white;
+font-family: 'Roboto', 'Times New Roman', Times, serif;
+}
+
+.new-chat-btn:hover {
+background: linear-gradient(135deg, var(--primary-hover), var(--primary-color));
+transform: translateY(-2px);
+box-shadow: 0 4px 8px rgba(138, 112, 71, 0.25);
+}
+
+.chat-list {
+list-style: none;
+padding: 0;
+margin: 0.5rem 0;
+}
+
+.chat-item {
+padding: 0.875rem 1rem;
+cursor: pointer;
+border-radius: 8px;
+margin: 0.375rem 0.75rem;
+display: flex;
+justify-content: space-between;
+align-items: center;
+white-space: nowrap;
+overflow: hidden;
+text-overflow: ellipsis;
+color: var(--text-color);
+transition: all 0.2s ease, background-color 0.3s ease, border-color 0.3s ease;
+border: 1px solid transparent;
+}
+
+.chat-item:hover {
+background-color: var(--hover-bg);
+border-color: var(--border-color);
+}
+
+.chat-item.active {
+background-color: var(--message-user-bg);
+font-weight: 500;
+border-left: 3px solid var(--accent-color);
+}
+
+.chat-item-title {
+flex: 1;
+white-space: nowrap;
+overflow: hidden;
+text-overflow: ellipsis;
+}
+
+.chat-actions {
+opacity: 0;
+transition: opacity 0.2s ease;
+display: flex;
+gap: 0.25rem;
+}
+
+.chat-item:hover .chat-actions {
+opacity: 1;
+}
+
+/* Input styling */
+.chat-input-wrapper {
+display: flex;
+align-items: flex-end;
+background-color: var(--input-bg);
+border: 1px solid var(--border-color);
+border-radius: var(--input-border-radius);
+padding: 0.75rem;
+width: 100%;
+transition: box-shadow 0.3s ease, border-color 0.3s ease, background-color 0.3s ease;
+box-sizing: border-box;
+box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.chat-input-wrapper:focus-within {
+border-color: var(--primary-color);
+box-shadow: 0 0 0 2px rgba(138, 112, 71, 0.1);
+}
+
+.chat-textarea {
+flex: 1;
+border: none;
+outline: none;
+background: transparent;
+resize: none;
+max-height: 250px;
+padding: 0.75rem 1.25rem;
+min-height: 60px;
+color: var(--text-color);
+font-family: 'Roboto', sans-serif;
+font-size: 1.2rem;
+line-height: 1.6;
+width: 100%;
+transition: color 0.3s ease;
+}
+
+.chat-send-btn {
+background: var(--primary-gradient);
+color: white;
+border: none;
+border-radius: var(--btn-border-radius);
+padding: 0.75rem;
+cursor: pointer;
+transition: all 0.2s ease, background 0.3s ease;
+margin-left: 0.5rem;
+display: flex;
+align-items: center;
+justify-content: center;
+min-width: 44px;
+height: 44px;
+}
+
+.chat-send-btn:hover:not(:disabled) {
+background: linear-gradient(135deg, var(--primary-hover), var(--primary-color));
+transform: translateY(-2px);
+box-shadow: 0 2px 6px rgba(138, 112, 71, 0.2);
+}
+
+.chat-send-btn:disabled {
+background: var(--border-color);
+cursor: not-allowed;
+color: var(--text-muted);
+}
+
+/* MODEL SELECTOR IN HEADER (NEW) */
+.header-model-selector {
+display: none;
+margin-left: 1rem;
+opacity: 0;
+transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.hide-sidebar .header-model-selector {
+display: block;
+opacity: 1;
+transform: translateX(0);
+animation: fadeInSlideRight 0.4s ease forwards;
+}
+
+@keyframes fadeInSlideRight {
+from {
+opacity: 0;
+transform: translateX(-20px);
+}
+to {
+opacity: 1;
+transform: translateX(0);
+}
+}
+
+/* Sidebar toggle button (enhanced) */
+.sidebar-toggle {
+background: transparent;
+border: none;
+color: var(--text-color);
+width: 36px;
+height: 36px;
+border-radius: 50%;
+display: flex;
+align-items: center;
+justify-content: center;
+cursor: pointer;
+transition: all 0.3s ease;
+border: 1px solid var(--border-color);
+margin-right: 1rem;
+}
+
+.sidebar-toggle:hover {
+background-color: var(--hover-bg);
+transform: translateY(-1px);
+}
+
+.sidebar-toggle i {
+transition: transform 0.3s ease;
+}
+
+.hide-sidebar .sidebar-toggle i {
+transform: rotate(180deg);
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+.sidebar {
+position: fixed;
+transform: translateX(-100%);
+}
+
+.sidebar.show {
+transform: translateX(0);
+}
+
+.toggle-sidebar {
+display: block !important;
+}
+
+.chat-input-container {
+padding: 0.85rem;
+}
+
+.entrance-overlay .logo-text {
+font-size: 2.5rem;
+}
+}
+
+/* Model selector dropdown */
+.model-selector {
+position: relative;
+display: inline-block;
+width: 100%;
+}
+
+.model-label {
+font-size: 0.875rem;
+color: var(--text-muted);
+margin-bottom: 0.5rem;
+display: block;
+font-weight: 500;
+transition: color 0.3s ease;
+}
+
+.model-dropdown {
+width: 100%;
+padding: 0.75rem 1rem;
+border: 1px solid var(--border-color);
+border-radius: var(--btn-border-radius);
+background-color: var(--input-bg);
+color: var(--text-color);
+cursor: pointer;
+transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.3s ease, color 0.3s ease;
+appearance: none;
+background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238a7047' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+background-repeat: no-repeat;
+background-position: right 10px center;
+background-size: 16px;
+font-family: 'Roboto', sans-serif;
+}
+
+/* Header model selector dropdown styles */
+.header-model-dropdown {
+min-width: 180px;
+padding: 0.7rem 2.4rem 0.7rem 1rem;
+border: 1px solid var(--border-color);
+border-radius: var(--btn-border-radius);
+background-color: var(--input-bg);
+color: var(--text-color);
+font-size: 1.2rem;
+cursor: pointer;
+transition: all 0.2s ease;
+background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238a7047' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+background-repeat: no-repeat;
+background-position: right 8px center;
+background-size: 12px;
+appearance: none;
+font-family: 'Roboto', 'Times New Roman', Times, serif;
+}
+
+.header-model-dropdown:hover {
+border-color: var(--primary-color);
+}
+
+.model-dropdown:focus {
+border-color: var(--primary-color);
+box-shadow: 0 0 0 2px rgba(138, 112, 71, 0.1);
+outline: none;
+}
+
+/* Markdown content styling */
+.markdown-content pre {
+background-color: var(--code-bg);
+border-radius: var(--card-border-radius);
+padding: 1.25rem;
+overflow-x: auto;
+position: relative;
+border: 1px solid var(--code-border);
+border-left: 3px solid var(--primary-color);
+margin: 1.25rem 0;
+box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Code copy button */
+.code-copy-btn {
+position: absolute;
+top: 0.85rem;
+right: 0.85rem;
+background-color: rgba(138, 112, 71, 0.1);
+color: var(--text-color);
+border: 1px solid rgba(138, 112, 71, 0.2);
+border-radius: 8px;
+padding: 0.375rem 0.75rem;
+font-size: 0.75rem;
+cursor: pointer;
+opacity: 0;
+transition: all 0.2s ease, color 0.3s ease, background-color 0.3s ease;
+display: flex;
+align-items: center;
+gap: 0.25rem;
+font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.code-copy-btn:hover {
+background-color: rgba(138, 112, 71, 0.15);
+}
+
+.markdown-content pre:hover .code-copy-btn {
+opacity: 1;
+}
+
+.markdown-content code {
+font-family: 'Fira Code', monospace;
+font-size: 0.875rem;
+color: var(--text-color);
+transition: color 0.3s ease;
+}
+
+.markdown-content p {
+margin-bottom: 1rem;
+line-height: 1.7;
+}
+
+.markdown-content ul, .markdown-content ol {
+margin-bottom: 1rem;
+padding-left: 2rem;
+}
+
+.markdown-content table {
+border-collapse: collapse;
+width: 100%;
+margin-bottom: 1.5rem;
+border-radius: 8px;
+overflow: hidden;
+border: 1px solid var(--border-color);
+transition: border-color 0.3s ease;
+}
+
+.markdown-content th, .markdown-content td {
+border: 1px solid var(--border-color);
+padding: 0.85rem;
+transition: border-color 0.3s ease;
+}
+
+.markdown-content th {
+background-color: var(--hover-bg);
+text-align: left;
+font-weight: 600;
+transition: background-color 0.3s ease;
+}
+
+.markdown-content a {
+color: var(--accent-color);
+text-decoration: none;
+border-bottom: 1px dashed var(--accent-color);
+transition: all 0.2s, color 0.3s ease, border-color 0.3s ease;
+}
+
+.markdown-content a:hover {
+border-bottom: 1px solid var(--accent-color);
+color: var(--primary-hover);
+}
+
+/* Add animation for loading */
+.typing-indicator {
+display: flex;
+align-items: center;
+margin: 1rem 0;
+padding: 0.85rem 1.25rem;
+background-color: var(--message-assistant-bg);
+border-radius: var(--message-border-radius);
+width: fit-content;
+box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+animation: fadeIn 0.3s ease-out;
+border: 1px solid var(--border-color);
+transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.typing-dot {
+width: 8px;
+height: 8px;
+background-color: var(--accent-color);
+border-radius: 50%;
+margin: 0 3px;
+animation: typing-animation 1.5s infinite ease-in-out;
+transition: background-color 0.3s ease;
+}
+
+.typing-dot:nth-child(2) {
+animation-delay: 0.2s;
+}
+
+.typing-dot:nth-child(3) {
+animation-delay: 0.4s;
+}
+
+@keyframes typing-animation {
+0%, 100% { 
+transform: translateY(0); 
+opacity: 0.5;
+}
+50% { 
+transform: translateY(-6px); 
+opacity: 1;
+}
+}
+
+/* Modern buttons */
+.btn {
+border-radius: var(--btn-border-radius);
+font-weight: 500;
+transition: all 0.2s ease;
+font-family: 'Roboto', 'Times New Roman', Times, serif;
+}
+
+.btn-sm {
+padding: 0.6rem 1rem;
+font-size: 1.2rem;
+}
+
+.btn:active {
+transform: scale(0.97);
+}
+
+/* Theme toggle button */
+.theme-toggle-btn {
+display: flex;
+align-items: center;
+justify-content: center;
+width: 50px;
+height: 50px;
+border-radius: 50%;
+background-color: var(--message-user-bg);
+border: 1px solid var(--border-color);
+color: var(--text-color);
+cursor: pointer;
+transition: all 0.2s ease, background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+margin-right: 0.75rem;
+}
+
+.theme-toggle-btn:hover {
+background-color: var(--hover-bg);
+transform: translateY(-2px);
+}
+
+/* Modal styling */
+.modal-content {
+background-color: var(--bg-color);
+background-image: var(--paper-texture);
+color: var(--text-color);
+border: 1px solid var(--border-color);
+border-radius: var(--card-border-radius);
+box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+.modal-header {
+border-bottom: 1px solid var(--border-color);
+padding: 1.25rem 1.5rem;
+transition: border-color 0.3s ease;
+}
+
+.modal-footer {
+border-top: 1px solid var(--border-color);
+padding: 1.25rem 1.5rem;
+transition: border-color 0.3s ease;
+}
+
+.btn-close {
+color: var(--text-color);
+filter: none;
+opacity: 0.7;
+transition: opacity 0.2s, color 0.3s ease;
+}
+
+.btn-close:hover {
+opacity: 1;
+}
+
+.form-control {
+background-color: var(--input-bg);
+border: 1px solid var(--border-color);
+color: var(--text-color);
+border-radius: var(--btn-border-radius);
+padding: 0.75rem 1rem;
+transition: all 0.2s ease, background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+font-family: Georgia, 'Times New Roman', Times, serif;
+}
+
+.form-control:focus {
+background-color: var(--input-bg);
+color: var(--text-color);
+border-color: var(--accent-color);
+box-shadow: 0 0 0 2px rgba(138, 112, 71, 0.1);
+}
+
+/* Button styles */
+.btn-outline-secondary {
+color: var(--text-color);
+border-color: var(--border-color);
+border-radius: var(--btn-border-radius);
+background-color: rgba(255, 255, 255, 0.1);
+transition: color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.btn-outline-secondary:hover {
+background-color: var(--hover-bg);
+color: var(--text-color);
+transform: translateY(-1px);
+border-color: var(--border-color);
+}
+
+.btn-primary {
+background: var(--primary-gradient);
+border: none;
+transition: background 0.3s ease;
+}
+
+.btn-primary:hover {
+background: linear-gradient(135deg, var(--primary-hover), var(--primary-color));
+transform: translateY(-1px);
+box-shadow: 0 2px 6px rgba(138, 112, 71, 0.2);
+}
+
+.btn-danger {
+background: linear-gradient(135deg, #c45c5c, #d47e7e);
+border: none;
+}
+
+.btn-danger:hover {
+background: linear-gradient(135deg, #b45454, #c45c5c);
+transform: translateY(-1px);
+box-shadow: 0 2px 6px rgba(196, 92, 92, 0.2);
+}
+
+/* Text utilities */
+.text-muted {
+color: var(--text-muted) !important;
+transition: color 0.3s ease;
+}
+
+/* Scrollbar customization */
+::-webkit-scrollbar {
+width: 8px;
+height: 8px;
+}
+
+::-webkit-scrollbar-track {
+background: var(--glass-bg);
+border-radius: 4px;
+transition: background-color 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb {
+background: var(--border-color);
+border-radius: 4px;
+transition: background-color 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+background: var(--text-muted);
+}
+
+/* Utils */
+.keyboard-hint {
+font-size: 0.75rem;
+opacity: 0.6;
+}
+
+.model-info {
+font-size: 0.75rem;
+display: flex;
+align-items: center;
+gap: 0.25rem;
+transition: color 0.3s ease;
+}
+
+.model-info:before {
+content: '';
+display: inline-block;
+width: 8px;
+height: 8px;
+background-color: var(--primary-color);
+border-radius: 50%;
+animation: pulse 2s infinite;
+transition: background-color 0.3s ease;
+}
+
+@keyframes pulse {
+0% {
+box-shadow: 0 0 0 0 rgba(138, 112, 71, 0.4);
+}
+70% {
+box-shadow: 0 0 0 6px rgba(138, 112, 71, 0);
+}
+100% {
+box-shadow: 0 0 0 0 rgba(138, 112, 71, 0);
+}
+}
+
+/* Fix for input field consistency */
+.chat-input-wrapper, .chat-textarea {
+box-sizing: border-box;
+width: 100%;
+}
+
+/* PrismJS theme customization - will automatically adjust with themes */
+/* Default (dark) theme code syntax */
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+color: #a0a0a0;
+}
+
+.token.punctuation {
+color: #e0e0e0;
+}
+
+.token.property,
+.token.tag,
+.token.constant,
+.token.symbol,
+.token.deleted {
+color: #a77ae0;
+}
+
+.token.boolean,
+.token.number {
+color: #b98df2;
+}
+
+.token.selector,
+.token.attr-name,
+.token.string,
+.token.char,
+.token.builtin,
+.token.inserted {
+color: #a3c287;
+}
+
+.token.operator,
+.token.entity,
+.token.url,
+.language-css .token.string,
+.style .token.string,
+.token.variable {
+color: #e0e0e0;
+}
+
+.token.atrule,
+.token.attr-value,
+.token.function,
+.token.class-name {
+color: #8c5ac8;
+}
+
+.token.keyword {
+color: #8c5ac8;
+}
+
+.token.regex,
+.token.important {
+color: #c89fff;
+}
+
+/* Light theme token colors */
+.light-theme .token.comment,
+.light-theme .token.prolog,
+.light-theme .token.doctype,
+.light-theme .token.cdata {
+color: #6d6d6d;
+}
+
+.light-theme .token.punctuation {
+color: #4a4a4a;
+}
+
+.light-theme .token.property,
+.light-theme .token.tag,
+.light-theme .token.constant,
+.light-theme .token.symbol,
+.light-theme .token.deleted {
+color: #7a4bb6;
+}
+
+.light-theme .token.boolean,
+.light-theme .token.number {
+color: #6c41a3;
+}
+
+.light-theme .token.selector,
+.light-theme .token.attr-name,
+.light-theme .token.string,
+.light-theme .token.char,
+.light-theme .token.builtin,
+.light-theme .token.inserted {
+color: #507c3c;
+}
+
+.light-theme .token.operator,
+.light-theme .token.entity,
+.light-theme .token.url,
+.light-theme .language-css .token.string,
+.light-theme .style .token.string,
+.light-theme .token.variable {
+color: #4a4a4a;
+}
+
+.light-theme .token.atrule,
+.light-theme .token.attr-value,
+.light-theme .token.function,
+.light-theme .token.class-name {
+color: #7a4bb6;
+}
+
+.light-theme .token.keyword {
+color: #8c5ac8;
+}
+
+.light-theme .token.regex,
+.light-theme .token.important {
+color: #7a4bb6;
+}
+
+/* Keyboard navigation focus states */
+.message.kb-focus {
+outline: 2px solid var(--primary-color);
+box-shadow: 0 0 0 4px rgba(140, 90, 200, 0.2);
+}
+
+/* Add smooth scroll snap for keyboard navigation */
+.chat-messages {
+scroll-snap-type: y proximity;
+overscroll-behavior-y: contain;
+}
+
+.message {
+scroll-snap-align: start;
+}
+pre code {
+font-family: 'Fira Code', monospace !important;
+}
+</style>
 </head>
 <body>
-    <!-- Entrance animation overlay -->
-    <div class="entrance-overlay">
-        <div class="logo-animation">
-            <div class="logo-text">Universe</div>
+<!-- Entrance animation overlay -->
+<div class="entrance-overlay">
+<div class="logo-animation">
+<div class="logo-text">Universe</div>
+</div>
+</div>
+
+<div class="app-container" id="appContainer">
+<!-- Sidebar -->
+<div class="sidebar" id="sidebar">
+<div class="p-3">
+<button class="btn btn-primary new-chat-btn" id="newChatBtn">
+<i class="fas fa-plus me-2"></i>New Chat
+</button>
+
+<div class="model-selector mb-3">
+<div class="model-label">AI Model</div>
+<select class="model-dropdown" id="modelSelector">
+{% for model_key, model_info in models.items() %}
+    <option value="{{ model_key }}">{{ model_key }}</option>
+{% endfor %}
+</select>
+</div>
+
+<div class="chat-list-container">
+<div class="d-flex justify-content-between align-items-center mb-2">
+<h6 class="mb-0">Chats</h6>
+</div>
+<ul class="chat-list" id="chatList">
+{% for chat_id, chat in chats.items() %}
+    <li class="chat-item {% if chat_id == 'default' %}active{% endif %}" data-chat-id="{{ chat_id }}">
+        <span class="chat-item-title">{{ chat.title }}</span>
+        <div class="chat-actions">
+            <button class="btn btn-sm rename-chat" data-chat-id="{{ chat_id }}" title="Rename">
+                <i class="fas fa-edit"></i>
+            </button>
+            <button class="btn btn-sm delete-chat" data-chat-id="{{ chat_id }}" title="Delete">
+                <i class="fas fa-trash"></i>
+            </button>
         </div>
+    </li>
+{% endfor %}
+</ul>
+</div>
+</div>
+</div>
+
+<!-- Main Content -->
+<div class="main-content">
+<div class="chat-header">
+<div class="d-flex align-items-center">
+<!-- Universal sidebar toggle button (visible on all screen sizes) -->
+<button class="sidebar-toggle" id="sidebarToggle" title="Toggle sidebar (Shift+S)">
+<i class="fas fa-angles-left"></i>
+</button>
+
+<h4 class="mb-0" id="currentChatTitle">
+{% if 'default' in chats %}
+    {{ chats['default'].title }}
+{% else %}
+    New Chat
+{% endif %}
+</h4>
+
+<!-- Header model selector (appears when sidebar is hidden) -->
+<div class="header-model-selector" id="headerModelSelector">
+<select class="header-model-dropdown" id="headerModelDropdown">
+    <!-- Will be populated with JavaScript -->
+</select>
+</div>
+</div>
+<div class="d-flex align-items-center">
+<!-- Theme Toggle Button -->
+<button class="theme-toggle-btn" id="themeToggle" title="Toggle dark/light mode">
+<i class="fas fa-sun" id="themeIcon"></i>
+</button>
+<button class="btn btn-sm btn-outline-secondary" id="clearChat" title="Clear chat">
+<i class="fas fa-broom me-1"></i>Clear
+</button>
+</div>
+</div>
+
+<div class="chat-messages" id="chatMessages">
+<!-- Initial messages will be added dynamically -->
+</div>
+
+<div class="chat-input-container">
+<div class="chat-input-wrapper">
+<textarea class="chat-textarea" id="messageInput" placeholder="Type a message... (or /newchat for new chat)" rows="2"></textarea>
+<button class="chat-send-btn" id="sendMessageBtn" disabled>
+<i class="fas fa-paper-plane"></i>
+</button>
+<button class="chat-send-btn bg-danger d-none" id="stopGenerationBtn" title="Stop generation">
+<i class="fas fa-stop"></i>
+</button>
+</div>
+<div class="d-flex justify-content-between mt-1">
+<small class="text-muted keyboard-hint">Press Enter to send, Shift+Enter for new line, ↑↓ to scroll</small>
+<small class="text-muted model-info">Model: <span id="currentModel">gpt-4o</span></small>
+</div>
+</div>
+</div>
+</div>
+
+<!-- Rename Chat Modal -->
+<div class="modal fade" id="renameChatModal" tabindex="-1" aria-hidden="true">
+<div class="modal-dialog modal-dialog-centered">
+<div class="modal-content">
+<div class="modal-header">
+<h5 class="modal-title">Rename Chat</h5>
+<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+</div>
+<div class="modal-body">
+<input type="text" class="form-control" id="newChatTitle" placeholder="Enter a title for this chat">
+<input type="hidden" id="renameChatId">
+</div>
+<div class="modal-footer">
+<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+<button type="button" class="btn btn-primary" id="saveChatTitleBtn">Save</button>
+</div>
+</div>
+</div>
+</div>
+
+<!-- Confirm Delete Modal -->
+<div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-hidden="true">
+<div class="modal-dialog modal-dialog-centered">
+<div class="modal-content">
+<div class="modal-header">
+<h5 class="modal-title">Confirm Delete</h5>
+<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+</div>
+<div class="modal-body">
+Are you sure you want to delete this chat? This action cannot be undone.
+<input type="hidden" id="deleteChatId">
+</div>
+<div class="modal-footer">
+<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+<button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete</button>
+</div>
+</div>
+</div>
+</div>
+
+<!-- Bootstrap & Dependencies -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Markdown parser -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.3.0/marked.min.js"></script>
+<!-- Code highlight -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-css.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-markdown.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-html.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-java.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-go.min.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+// DOM elements
+const chatMessages = document.getElementById('chatMessages');
+const messageInput = document.getElementById('messageInput');
+const sendMessageBtn = document.getElementById('sendMessageBtn');
+const stopGenerationBtn = document.getElementById('stopGenerationBtn');
+const modelSelector = document.getElementById('modelSelector');
+const headerModelDropdown = document.getElementById('headerModelDropdown');
+const newChatBtn = document.getElementById('newChatBtn');
+const chatList = document.getElementById('chatList');
+const currentChatTitle = document.getElementById('currentChatTitle');
+const currentModel = document.getElementById('currentModel');
+const sidebar = document.getElementById('sidebar');
+const clearChat = document.getElementById('clearChat');
+const themeToggle = document.getElementById('themeToggle');
+const themeIcon = document.getElementById('themeIcon');
+const appContainer = document.getElementById('appContainer');
+const sidebarToggle = document.getElementById('sidebarToggle');
+
+// Bootstrap modals
+const renameChatModal = new bootstrap.Modal(document.getElementById('renameChatModal'));
+const confirmDeleteModal = new bootstrap.Modal(document.getElementById('confirmDeleteModal'));
+
+// Current state
+let currentChatId = 'default';
+let isWaitingForResponse = false;
+let isDarkTheme = localStorage.getItem('theme') !== 'light'; // Default to dark theme
+let focusedMessageIndex = -1;
+let messages = [];
+
+// Initialize theme
+if (isDarkTheme) {
+document.body.classList.remove('light-theme');
+themeIcon.classList.remove('fa-sun');
+themeIcon.classList.add('fa-moon');
+} else {
+document.body.classList.add('light-theme');
+themeIcon.classList.remove('fa-moon');
+themeIcon.classList.add('fa-sun');
+}
+
+// Check if sidebar should be hidden by default (from localStorage)
+if (localStorage.getItem('sidebarHidden') === 'true') {
+appContainer.classList.add('hide-sidebar');
+}
+
+// Theme toggle functionality
+themeToggle.addEventListener('click', function() {
+isDarkTheme = !isDarkTheme;
+
+if (isDarkTheme) {
+document.body.classList.remove('light-theme');
+localStorage.setItem('theme', 'dark');
+themeIcon.classList.remove('fa-sun');
+themeIcon.classList.add('fa-moon');
+} else {
+document.body.classList.add('light-theme');
+localStorage.setItem('theme', 'light');
+themeIcon.classList.remove('fa-moon');
+themeIcon.classList.add('fa-sun');
+}
+});
+
+// Function to toggle sidebar visibility with animation
+function toggleSidebarVisibility() {
+appContainer.classList.toggle('hide-sidebar');
+
+// Save preference to localStorage
+localStorage.setItem('sidebarHidden', appContainer.classList.contains('hide-sidebar'));
+
+// Sync model selectors when sidebar toggled
+syncModelSelectors();
+
+// Ensure input field is consistent after transition
+setTimeout(() => {
+resizeTextarea();
+// Fix width issues
+const chatInputWrapper = document.querySelector('.chat-input-wrapper');
+chatInputWrapper.style.width = '100%';
+messageInput.style.width = '100%';
+}, 350); // Wait for transition to complete
+}
+
+// Sync model selectors between sidebar and header
+function syncModelSelectors() {
+// Create header model dropdown if it doesn't exist
+if (!headerModelDropdown) return;
+
+// Clone options from the sidebar model selector
+headerModelDropdown.innerHTML = '';
+
+Array.from(modelSelector.options).forEach(option => {
+const newOption = document.createElement('option');
+newOption.value = option.value;
+newOption.text = option.text;
+newOption.selected = option.selected;
+headerModelDropdown.appendChild(newOption);
+});
+}
+
+// Sidebar toggle button event listener
+sidebarToggle.addEventListener('click', toggleSidebarVisibility);
+
+// Setup header model selector event listener
+if (headerModelDropdown) {
+headerModelDropdown.addEventListener('change', function() {
+modelSelector.value = this.value;
+updateCurrentModel();
+});
+}
+
+// Initialize model selector sync
+syncModelSelectors();
+
+// Keyboard navigation system for chat messages
+function setupArrowKeyNavigation() {
+document.addEventListener('keydown', function(e) {
+// Skip if focused in an input element or if modifier keys are pressed
+if (document.activeElement === messageInput || 
+document.activeElement.tagName === 'INPUT' ||
+document.activeElement.tagName === 'SELECT' ||
+e.ctrlKey || e.metaKey || e.altKey) {
+return;
+}
+
+const scrollAmount = 100;
+messages = Array.from(document.querySelectorAll('.message'));
+
+// Handle arrow keys for navigation
+if (e.key === 'ArrowUp') {
+e.preventDefault();
+
+if (focusedMessageIndex === -1) {
+    focusedMessageIndex = messages.length - 1;
+} else if (focusedMessageIndex > 0) {
+    focusedMessageIndex--;
+}
+
+focusMessage(focusedMessageIndex);
+} else if (e.key === 'ArrowDown') {
+e.preventDefault();
+
+if (focusedMessageIndex === -1) {
+    focusedMessageIndex = 0;
+} else if (focusedMessageIndex < messages.length - 1) {
+    focusedMessageIndex++;
+}
+
+focusMessage(focusedMessageIndex);
+} else if (e.key === 'PageUp') {
+e.preventDefault();
+chatMessages.scrollBy({
+    top: -chatMessages.clientHeight,
+    behavior: 'smooth'
+});
+} else if (e.key === 'PageDown') {
+e.preventDefault();
+chatMessages.scrollBy({
+    top: chatMessages.clientHeight,
+    behavior: 'smooth'
+});
+} else if (e.key === 'Home') {
+e.preventDefault();
+chatMessages.scrollTo({
+    top: 0,
+    behavior: 'smooth'
+});
+} else if (e.key === 'End') {
+e.preventDefault();
+chatMessages.scrollTo({
+    top: chatMessages.scrollHeight,
+    behavior: 'smooth'
+});
+}
+});
+}
+
+// Focus a specific message and scroll to it
+function focusMessage(index) {
+// Remove focus from all messages
+messages.forEach(msg => msg.classList.remove('kb-focus'));
+
+if (index >= 0 && index < messages.length) {
+// Add focus class to current message
+messages[index].classList.add('kb-focus');
+
+// Scroll the message into view
+messages[index].scrollIntoView({
+behavior: 'smooth',
+block: 'center'
+});
+}
+}
+
+// Initialize arrow key navigation
+setupArrowKeyNavigation();
+
+// Markdown configuration
+marked.setOptions({
+highlight: function(code, lang) {
+if (Prism.languages[lang]) {
+return Prism.highlight(code, Prism.languages[lang], lang);
+} else {
+return code;
+}
+},
+breaks: true,
+gfm: true
+});
+
+// Initialize
+updateCurrentModel();
+resizeTextarea();
+scrollToBottom();
+
+// Ensure input widths are consistent
+const chatInputWrapper = document.querySelector('.chat-input-wrapper');
+chatInputWrapper.style.width = '100%';
+messageInput.style.width = '100%';
+
+// Load initial chat if available
+if (currentChatId) {
+loadChat(currentChatId);
+}
+
+// Event listeners
+messageInput.addEventListener('input', function() {
+resizeTextarea();
+sendMessageBtn.disabled = !messageInput.value.trim();
+});
+
+messageInput.addEventListener('keydown', function(e) {
+// Enter to send, Shift+Enter for new line
+if (e.key === 'Enter' && !e.shiftKey) {
+e.preventDefault();
+// Handle commands
+const message = messageInput.value.trim();
+if (message === '/newchat') {
+messageInput.value = '';
+createNewChat();
+return;
+} else if (message === '/copy') {
+messageInput.value = '';
+copyLatestCodeBlock();
+return;
+}
+
+if (!sendMessageBtn.disabled) {
+sendMessage();
+}
+}
+});
+
+sendMessageBtn.addEventListener('click', sendMessage);
+
+stopGenerationBtn.addEventListener('click', function() {
+stopGeneration();
+});
+
+modelSelector.addEventListener('change', function() {
+updateCurrentModel();
+if (headerModelDropdown) {
+headerModelDropdown.value = this.value;
+}
+});
+
+newChatBtn.addEventListener('click', createNewChat);
+
+clearChat.addEventListener('click', function() {
+clearCurrentChat();
+});
+
+// Chat list click events using event delegation
+chatList.addEventListener('click', function(e) {
+const chatItem = e.target.closest('.chat-item');
+const renameBtn = e.target.closest('.rename-chat');
+const deleteBtn = e.target.closest('.delete-chat');
+
+if (renameBtn) {
+e.stopPropagation();
+const chatId = renameBtn.getAttribute('data-chat-id');
+openRenameModal(chatId);
+} else if (deleteBtn) {
+e.stopPropagation();
+const chatId = deleteBtn.getAttribute('data-chat-id');
+openDeleteModal(chatId);
+} else if (chatItem) {
+const chatId = chatItem.getAttribute('data-chat-id');
+loadChat(chatId);
+}
+});
+
+// Copy message buttons using event delegation
+chatMessages.addEventListener('click', function(e) {
+const copyBtn = e.target.closest('.copy-message');
+if (copyBtn) {
+const messageEl = copyBtn.closest('.message');
+const content = messageEl.querySelector('.message-content').textContent;
+copyToClipboard(content);
+
+// Show feedback
+const originalIcon = copyBtn.innerHTML;
+copyBtn.innerHTML = '<i class="fas fa-check"></i>';
+setTimeout(() => {
+copyBtn.innerHTML = originalIcon;
+}, 1500);
+}
+});
+
+// Modal event handlers
+document.getElementById('saveChatTitleBtn').addEventListener('click', function() {
+const chatId = document.getElementById('renameChatId').value;
+const newTitle = document.getElementById('newChatTitle').value.trim();
+if (newTitle) {
+renameChat(chatId, newTitle);
+renameChatModal.hide();
+}
+});
+
+document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
+const chatId = document.getElementById('deleteChatId').value;
+deleteChat(chatId);
+confirmDeleteModal.hide();
+});
+
+// Functions
+let currentEventSource = null;
+function sendMessage() {
+if (isWaitingForResponse) return;
+
+const message = messageInput.value.trim();
+if (!message) return;
+
+// Handle commands
+if (message === '/newchat') {
+messageInput.value = '';
+createNewChat();
+return;
+} else if (message === '/copy') {
+messageInput.value = '';
+copyLatestCodeBlock();
+return;
+}
+
+// Add user message to UI
+addMessage('user', message);
+
+// Clear input
+messageInput.value = '';
+resizeTextarea();
+sendMessageBtn.disabled = true;
+
+// Show typing indicator and stop button
+addTypingIndicator();
+stopGenerationBtn.classList.remove('d-none');
+isWaitingForResponse = true;
+
+// Get selected model
+const selectedModel = modelSelector.value;
+
+// Parse models information from Flask template
+const modelsInfo = JSON.parse(document.getElementById('models-data').textContent);
+const isStreamingModel = modelsInfo[selectedModel]?.stream !== false;
+
+if (isStreamingModel) {
+// Stream response
+currentEventSource = new EventSource(`/chat?message=${encodeURIComponent(message)}&model=${selectedModel}&chat_id=${currentChatId}`);
+
+let responseText = '';
+let responseContainer = null;
+
+currentEventSource.onmessage = function(event) {
+const data = JSON.parse(event.data);
+
+if (!responseContainer) {
+// Remove typing indicator
+removeTypingIndicator();
+
+// Create new message container
+responseContainer = addMessage('assistant', '');
+}
+
+if (data.error) {
+responseContainer.querySelector('.message-content').textContent = 'Error: ' + data.error;
+currentEventSource.close();
+currentEventSource = null;
+stopGenerationBtn.classList.add('d-none');
+isWaitingForResponse = false;
+} else if (data.chunk) {
+responseText += data.chunk;
+responseContainer.querySelector('.message-content').innerHTML = renderMarkdown(responseText);
+}
+
+if (data.done) {
+currentEventSource.close();
+currentEventSource = null;
+stopGenerationBtn.classList.add('d-none');
+isWaitingForResponse = false;
+
+// Add token usage information if available
+if (data.token_usage) {
+// First remove any existing token usage element
+const existingTokenUsage = responseContainer.querySelector('.token-usage');
+if (existingTokenUsage) {
+existingTokenUsage.remove();
+}
+
+// Then add the new token usage element
+const tokenUsageElement = document.createElement('div');
+tokenUsageElement.className = 'token-usage';
+tokenUsageElement.innerHTML = `
+<span class="token-input" title="Number of tokens in the prompt">
+    Input: ${data.token_usage.input_tokens}
+</span>
+<span class="token-output" title="Number of tokens in the response">
+    Output: ${data.token_usage.output_tokens}
+</span>
+<span class="token-total" title="Total tokens used">
+    Total: ${data.token_usage.total_tokens}
+</span>
+`;
+responseContainer.appendChild(tokenUsageElement);
+}
+
+// Apply syntax highlighting to code blocks
+Prism.highlightAllUnder(responseContainer);
+// Add copy buttons to code blocks
+addCopyButtonsToCodeBlocks(responseContainer);
+}
+};
+
+currentEventSource.onerror = function() {
+removeTypingIndicator();
+if (!responseContainer) {
+responseContainer = addMessage('assistant', 'Sorry, there was an error processing your request.');
+}
+currentEventSource.close();
+currentEventSource = null;
+stopGenerationBtn.classList.add('d-none');
+isWaitingForResponse = false;
+};
+} else {
+// Non-streaming response - Only execute this code if NOT streaming
+fetch('/chat', {
+method: 'POST',
+headers: {
+'Content-Type': 'application/json'
+},
+body: JSON.stringify({
+message: message,
+model: selectedModel,
+chat_id: currentChatId
+})
+})
+.then(response => response.json())
+.then(data => {
+removeTypingIndicator();
+if (data.error) {
+addMessage('assistant', 'Error: ' + data.error);
+} else {
+// Pass token usage information to the addMessage function
+const messageEl = addMessage('assistant', data.response, data.token_usage);
+Prism.highlightAllUnder(messageEl);
+addCopyButtonsToCodeBlocks(messageEl);
+}
+})
+.catch(error => {
+removeTypingIndicator();
+addMessage('assistant', 'Sorry, there was an error processing your request.');
+console.error('Error:', error);
+})
+.finally(() => {
+isWaitingForResponse = false;
+stopGenerationBtn.classList.add('d-none');
+});
+}
+}            
+
+// Find the addMessage function in your JavaScript code and modify it to handle token usage
+function addMessage(role, content, tokenUsage = null) {
+const message = document.createElement('div');
+message.className = `message message-${role}`;
+
+const messageContent = document.createElement('div');
+messageContent.className = 'message-content markdown-content';
+
+if (content) {
+messageContent.innerHTML = renderMarkdown(content);
+
+// Add copy button
+const messageActions = document.createElement('div');
+messageActions.className = 'message-actions';
+messageActions.innerHTML = `
+<button class="btn btn-sm copy-message" title="Copy message">
+<i class="fas fa-copy"></i>
+</button>
+`;
+message.appendChild(messageActions);
+}
+
+message.appendChild(messageContent);
+
+// Add token usage information if available
+if (tokenUsage && role === 'assistant') {
+const tokenUsageElement = document.createElement('div');
+tokenUsageElement.className = 'token-usage';
+tokenUsageElement.innerHTML = `
+<span class="token-input" title="Number of tokens in the prompt">
+Input: ${tokenUsage.input_tokens}
+</span>
+<span class="token-output" title="Number of tokens in the response">
+Output: ${tokenUsage.output_tokens}
+</span>
+<span class="token-total" title="Total tokens used">
+Total: ${tokenUsage.total_tokens}
+</span>
+`;
+message.appendChild(tokenUsageElement);
+}
+
+chatMessages.appendChild(message);
+
+// Auto-scroll to the new message
+message.scrollIntoView({ behavior: 'smooth', block: 'end' });
+
+// Reset focus for keyboard navigation
+focusedMessageIndex = -1;
+
+return message;
+}
+function addTypingIndicator() {
+const indicator = document.createElement('div');
+indicator.className = 'typing-indicator';
+indicator.innerHTML = `
+<div class="typing-dot"></div>
+<div class="typing-dot"></div>
+<div class="typing-dot"></div>
+`;
+indicator.id = 'typingIndicator';
+chatMessages.appendChild(indicator);
+indicator.scrollIntoView({ behavior: 'smooth', block: 'end' });
+}
+
+function removeTypingIndicator() {
+const indicator = document.getElementById('typingIndicator');
+if (indicator) {
+indicator.remove();
+}
+}
+
+function renderMarkdown(text) {
+return marked.parse(text);
+}
+
+function addCopyButtonsToCodeBlocks(container) {
+const codeBlocks = container.querySelectorAll('pre code');
+codeBlocks.forEach(codeBlock => {
+const pre = codeBlock.parentNode;
+
+// Don't add button if one already exists
+if (pre.querySelector('.code-copy-btn')) return;
+
+const copyBtn = document.createElement('button');
+copyBtn.className = 'code-copy-btn';
+copyBtn.innerHTML = '<i class="fas fa-copy"></i> Copy';
+copyBtn.addEventListener('click', function() {
+const code = codeBlock.textContent;
+navigator.clipboard.writeText(code).then(() => {
+    copyBtn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+    setTimeout(() => {
+        copyBtn.innerHTML = '<i class="fas fa-copy"></i> Copy';
+    }, 2000);
+}).catch(err => {
+    console.error('Failed to copy code:', err);
+});
+});
+
+pre.appendChild(copyBtn);
+});
+}
+
+function copyLatestCodeBlock() {
+const codeBlocks = document.querySelectorAll('pre code');
+if (codeBlocks.length > 0) {
+// Get the most recent code block
+const latestCodeBlock = codeBlocks[codeBlocks.length - 1];
+const code = latestCodeBlock.textContent;
+
+navigator.clipboard.writeText(code).then(() => {
+// Show feedback as a temporary message
+const tempMsg = addMessage('assistant', 'Code copied to clipboard!');
+setTimeout(() => {
+    tempMsg.remove();
+}, 2000);
+}).catch(err => {
+console.error('Failed to copy code:', err);
+});
+} else {
+// Show feedback that no code blocks were found
+const tempMsg = addMessage('assistant', 'No code blocks found to copy.');
+setTimeout(() => {
+tempMsg.remove();
+}, 2000);
+}
+}
+
+function stopGeneration() {
+if (currentEventSource) {
+currentEventSource.close();
+currentEventSource = null;
+removeTypingIndicator();
+stopGenerationBtn.classList.add('d-none');
+isWaitingForResponse = false;
+
+// Indicate to user that generation was stopped
+const tempMsg = addMessage('assistant', '_Generation stopped by user._');
+setTimeout(() => {
+tempMsg.remove();
+}, 2000);
+}
+}
+
+function resizeTextarea() {
+messageInput.style.height = 'auto';
+messageInput.style.height = (messageInput.scrollHeight) + 'px';
+}
+
+function scrollToBottom() {
+chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function updateCurrentModel() {
+currentModel.textContent = modelSelector.value;
+}
+
+function copyToClipboard(text) {
+navigator.clipboard.writeText(text).catch(err => {
+console.error('Failed to copy text:', err);
+});
+}
+
+function createNewChat() {
+fetch('/chat/new', {
+method: 'POST',
+headers: {
+'Content-Type': 'application/json'
+}
+})
+.then(response => response.json())
+.then(data => {
+if (data.status === 'success') {
+// Add to chat list
+const newChatItem = document.createElement('li');
+newChatItem.className = 'chat-item';
+newChatItem.setAttribute('data-chat-id', data.chat_id);
+newChatItem.innerHTML = `
+    <span class="chat-item-title">${data.chat.title}</span>
+    <div class="chat-actions">
+        <button class="btn btn-sm rename-chat" data-chat-id="${data.chat_id}" title="Rename">
+            <i class="fas fa-edit"></i>
+        </button>
+        <button class="btn btn-sm delete-chat" data-chat-id="${data.chat_id}" title="Delete">
+            <i class="fas fa-trash"></i>
+        </button>
     </div>
+`;
+chatList.prepend(newChatItem);
 
-    <div class="app-container" id="appContainer">
-        <!-- Sidebar -->
-        <div class="sidebar" id="sidebar">
-            <div class="p-3">
-                <button class="btn btn-primary new-chat-btn" id="newChatBtn">
-                    <i class="fas fa-plus me-2"></i>New Chat
-                </button>
-                
-                <div class="model-selector mb-3">
-                    <div class="model-label">AI Model</div>
-                    <select class="model-dropdown" id="modelSelector">
-                        {% for model_key, model_info in models.items() %}
-                            <option value="{{ model_key }}">{{ model_key }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                
-                <div class="chat-list-container">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <h6 class="mb-0">Chats</h6>
-                    </div>
-                    <ul class="chat-list" id="chatList">
-                        {% for chat_id, chat in chats.items() %}
-                            <li class="chat-item {% if chat_id == 'default' %}active{% endif %}" data-chat-id="{{ chat_id }}">
-                                <span class="chat-item-title">{{ chat.title }}</span>
-                                <div class="chat-actions">
-                                    <button class="btn btn-sm rename-chat" data-chat-id="{{ chat_id }}" title="Rename">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    <button class="btn btn-sm delete-chat" data-chat-id="{{ chat_id }}" title="Delete">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
-                            </li>
-                        {% endfor %}
-                    </ul>
-                </div>
-            </div>
-        </div>
+// Ensure the chat input is consistent
+setTimeout(() => {
+    resizeTextarea();
+    // Fix width issues
+    const chatInputWrapper = document.querySelector('.chat-input-wrapper');
+    chatInputWrapper.style.width = '100%';
+    messageInput.style.width = '100%';
+}, 100);
 
-        <!-- Main Content -->
-        <div class="main-content">
-            <div class="chat-header">
-                <div class="d-flex align-items-center">
-                    <!-- Universal sidebar toggle button (visible on all screen sizes) -->
-                    <button class="sidebar-toggle" id="sidebarToggle" title="Toggle sidebar (Shift+S)">
-                        <i class="fas fa-angles-left"></i>
-                    </button>
-                    
-                    <h4 class="mb-0" id="currentChatTitle">
-                        {% if 'default' in chats %}
-                            {{ chats['default'].title }}
-                        {% else %}
-                            New Chat
-                        {% endif %}
-                    </h4>
-                    
-                    <!-- Header model selector (appears when sidebar is hidden) -->
-                    <div class="header-model-selector" id="headerModelSelector">
-                        <select class="header-model-dropdown" id="headerModelDropdown">
-                            <!-- Will be populated with JavaScript -->
-                        </select>
-                    </div>
-                </div>
-                <div class="d-flex align-items-center">
-                    <!-- Theme Toggle Button -->
-                    <button class="theme-toggle-btn" id="themeToggle" title="Toggle dark/light mode">
-                        <i class="fas fa-sun" id="themeIcon"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-secondary" id="clearChat" title="Clear chat">
-                        <i class="fas fa-broom me-1"></i>Clear
-                    </button>
-                </div>
-            </div>
+// Load the new chat
+loadChat(data.chat_id);
+}
+})
+.catch(error => {
+console.error('Error creating new chat:', error);
+});
+}
 
-            <div class="chat-messages" id="chatMessages">
-                <!-- Initial messages will be added dynamically -->
-            </div>
+function loadChat(chatId) {
+if (chatId === currentChatId) return;
 
-            <div class="chat-input-container">
-                <div class="chat-input-wrapper">
-                    <textarea class="chat-textarea" id="messageInput" placeholder="Type a message... (or /newchat for new chat)" rows="2"></textarea>
-                    <button class="chat-send-btn" id="sendMessageBtn" disabled>
-                        <i class="fas fa-paper-plane"></i>
-                    </button>
-                    <button class="chat-send-btn bg-danger d-none" id="stopGenerationBtn" title="Stop generation">
-                        <i class="fas fa-stop"></i>
-                    </button>
-                </div>
-                <div class="d-flex justify-content-between mt-1">
-                    <small class="text-muted keyboard-hint">Press Enter to send, Shift+Enter for new line, ↑↓ to scroll</small>
-                    <small class="text-muted model-info">Model: <span id="currentModel">gpt-4o</span></small>
-                </div>
-            </div>
-        </div>
-    </div>
+fetch(`/chat/history/${chatId}`)
+.then(response => response.json())
+.then(data => {
+if (data.status === 'success') {
+// Update current chat ID
+currentChatId = chatId;
 
-    <!-- Rename Chat Modal -->
-    <div class="modal fade" id="renameChatModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Rename Chat</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <input type="text" class="form-control" id="newChatTitle" placeholder="Enter a title for this chat">
-                    <input type="hidden" id="renameChatId">
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="saveChatTitleBtn">Save</button>
-                </div>
-            </div>
-        </div>
-    </div>
+// Update chat title
+currentChatTitle.textContent = data.chat.title;
 
-    <!-- Confirm Delete Modal -->
-    <div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Confirm Delete</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    Are you sure you want to delete this chat? This action cannot be undone.
-                    <input type="hidden" id="deleteChatId">
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete</button>
-                </div>
-            </div>
-        </div>
-    </div>
+// Update chat list UI
+const chatItems = chatList.querySelectorAll('.chat-item');
+chatItems.forEach(item => {
+    item.classList.remove('active');
+    if (item.getAttribute('data-chat-id') === chatId) {
+        item.classList.add('active');
+    }
+});
 
-    <!-- Bootstrap & Dependencies -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- Markdown parser -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.3.0/marked.min.js"></script>
-    <!-- Code highlight -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-css.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-markdown.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-html.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-java.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-go.min.js"></script>
-    
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // DOM elements
-            const chatMessages = document.getElementById('chatMessages');
-            const messageInput = document.getElementById('messageInput');
-            const sendMessageBtn = document.getElementById('sendMessageBtn');
-            const stopGenerationBtn = document.getElementById('stopGenerationBtn');
-            const modelSelector = document.getElementById('modelSelector');
-            const headerModelDropdown = document.getElementById('headerModelDropdown');
-            const newChatBtn = document.getElementById('newChatBtn');
-            const chatList = document.getElementById('chatList');
-            const currentChatTitle = document.getElementById('currentChatTitle');
-            const currentModel = document.getElementById('currentModel');
-            const sidebar = document.getElementById('sidebar');
-            const clearChat = document.getElementById('clearChat');
-            const themeToggle = document.getElementById('themeToggle');
-            const themeIcon = document.getElementById('themeIcon');
-            const appContainer = document.getElementById('appContainer');
-            const sidebarToggle = document.getElementById('sidebarToggle');
-            
-            // Bootstrap modals
-            const renameChatModal = new bootstrap.Modal(document.getElementById('renameChatModal'));
-            const confirmDeleteModal = new bootstrap.Modal(document.getElementById('confirmDeleteModal'));
-            
-            // Current state
-            let currentChatId = 'default';
-            let isWaitingForResponse = false;
-            let isDarkTheme = localStorage.getItem('theme') !== 'light'; // Default to dark theme
-            let focusedMessageIndex = -1;
-            let messages = [];
+// Clear and repopulate messages
+chatMessages.innerHTML = '';
 
-            // Initialize theme
-            if (isDarkTheme) {
-                document.body.classList.remove('light-theme');
-                themeIcon.classList.remove('fa-sun');
-                themeIcon.classList.add('fa-moon');
-            } else {
-                document.body.classList.add('light-theme');
-                themeIcon.classList.remove('fa-moon');
-                themeIcon.classList.add('fa-sun');
-            }
+// Skip the default greeting message
+const messagesToShow = data.chat.messages.filter((msg, index) => {
+    // Skip the first assistant message (which is typically the greeting)
+    return !(index === 0 && msg.role === 'assistant' && 
+                msg.content.includes("Hello! I'm your AI assistant"));
+});
 
-            // Check if sidebar should be hidden by default (from localStorage)
-            if (localStorage.getItem('sidebarHidden') === 'true') {
-                appContainer.classList.add('hide-sidebar');
-            }
+messagesToShow.forEach(message => {
+    const messageEl = addMessage(message.role, message.content);
+    if (message.content) {
+        Prism.highlightAllUnder(messageEl);
+        addCopyButtonsToCodeBlocks(messageEl);
+    }
+});
 
-            // Theme toggle functionality
-            themeToggle.addEventListener('click', function() {
-                isDarkTheme = !isDarkTheme;
-                
-                if (isDarkTheme) {
-                    document.body.classList.remove('light-theme');
-                    localStorage.setItem('theme', 'dark');
-                    themeIcon.classList.remove('fa-sun');
-                    themeIcon.classList.add('fa-moon');
-                } else {
-                    document.body.classList.add('light-theme');
-                    localStorage.setItem('theme', 'light');
-                    themeIcon.classList.remove('fa-moon');
-                    themeIcon.classList.add('fa-sun');
-                }
-            });
+// Close mobile sidebar if open
+sidebar.classList.remove('show');
 
-            // Function to toggle sidebar visibility with animation
-            function toggleSidebarVisibility() {
-                appContainer.classList.toggle('hide-sidebar');
-                
-                // Save preference to localStorage
-                localStorage.setItem('sidebarHidden', appContainer.classList.contains('hide-sidebar'));
-                
-                // Sync model selectors when sidebar toggled
-                syncModelSelectors();
-                
-                // Ensure input field is consistent after transition
-                setTimeout(() => {
-                    resizeTextarea();
-                    // Fix width issues
-                    const chatInputWrapper = document.querySelector('.chat-input-wrapper');
-                    chatInputWrapper.style.width = '100%';
-                    messageInput.style.width = '100%';
-                }, 350); // Wait for transition to complete
-            }
+// Ensure input field is consistent
+setTimeout(() => {
+    resizeTextarea();
+    // Fix width issues
+    const chatInputWrapper = document.querySelector('.chat-input-wrapper');
+    chatInputWrapper.style.width = '100%';
+    messageInput.style.width = '100%';
+}, 100);
 
-            // Sync model selectors between sidebar and header
-            function syncModelSelectors() {
-                // Create header model dropdown if it doesn't exist
-                if (!headerModelDropdown) return;
-                
-                // Clone options from the sidebar model selector
-                headerModelDropdown.innerHTML = '';
-                
-                Array.from(modelSelector.options).forEach(option => {
-                    const newOption = document.createElement('option');
-                    newOption.value = option.value;
-                    newOption.text = option.text;
-                    newOption.selected = option.selected;
-                    headerModelDropdown.appendChild(newOption);
-                });
-            }
+// Reset focus for keyboard navigation
+focusedMessageIndex = -1;
+}
+})
+.catch(error => {
+console.error('Error loading chat:', error);
+});
+}
 
-            // Sidebar toggle button event listener
-            sidebarToggle.addEventListener('click', toggleSidebarVisibility);
+function openRenameModal(chatId) {
+// Find the current title
+const chatItem = document.querySelector(`.chat-item[data-chat-id="${chatId}"]`);
+const currentTitle = chatItem.querySelector('.chat-item-title').textContent;
 
-            // Setup header model selector event listener
-            if (headerModelDropdown) {
-                headerModelDropdown.addEventListener('change', function() {
-                    modelSelector.value = this.value;
-                    updateCurrentModel();
-                });
-            }
+// Set values in modal
+document.getElementById('renameChatId').value = chatId;
+document.getElementById('newChatTitle').value = currentTitle;
 
-            // Initialize model selector sync
-            syncModelSelectors();
+// Show modal
+renameChatModal.show();
 
-            // Keyboard navigation system for chat messages
-            function setupArrowKeyNavigation() {
-                document.addEventListener('keydown', function(e) {
-                    // Skip if focused in an input element or if modifier keys are pressed
-                    if (document.activeElement === messageInput || 
-                        document.activeElement.tagName === 'INPUT' ||
-                        document.activeElement.tagName === 'SELECT' ||
-                        e.ctrlKey || e.metaKey || e.altKey) {
-                        return;
-                    }
-                    
-                    const scrollAmount = 100;
-                    messages = Array.from(document.querySelectorAll('.message'));
-                    
-                    // Handle arrow keys for navigation
-                    if (e.key === 'ArrowUp') {
-                        e.preventDefault();
-                        
-                        if (focusedMessageIndex === -1) {
-                            focusedMessageIndex = messages.length - 1;
-                        } else if (focusedMessageIndex > 0) {
-                            focusedMessageIndex--;
-                        }
-                        
-                        focusMessage(focusedMessageIndex);
-                    } else if (e.key === 'ArrowDown') {
-                        e.preventDefault();
-                        
-                        if (focusedMessageIndex === -1) {
-                            focusedMessageIndex = 0;
-                        } else if (focusedMessageIndex < messages.length - 1) {
-                            focusedMessageIndex++;
-                        }
-                        
-                        focusMessage(focusedMessageIndex);
-                    } else if (e.key === 'PageUp') {
-                        e.preventDefault();
-                        chatMessages.scrollBy({
-                            top: -chatMessages.clientHeight,
-                            behavior: 'smooth'
-                        });
-                    } else if (e.key === 'PageDown') {
-                        e.preventDefault();
-                        chatMessages.scrollBy({
-                            top: chatMessages.clientHeight,
-                            behavior: 'smooth'
-                        });
-                    } else if (e.key === 'Home') {
-                        e.preventDefault();
-                        chatMessages.scrollTo({
-                            top: 0,
-                            behavior: 'smooth'
-                        });
-                    } else if (e.key === 'End') {
-                        e.preventDefault();
-                        chatMessages.scrollTo({
-                            top: chatMessages.scrollHeight,
-                            behavior: 'smooth'
-                        });
-                    }
-                });
-            }
+// Focus input
+setTimeout(() => {
+document.getElementById('newChatTitle').focus();
+document.getElementById('newChatTitle').select();
+}, 500);
+}
 
-            // Focus a specific message and scroll to it
-            function focusMessage(index) {
-                // Remove focus from all messages
-                messages.forEach(msg => msg.classList.remove('kb-focus'));
-                
-                if (index >= 0 && index < messages.length) {
-                    // Add focus class to current message
-                    messages[index].classList.add('kb-focus');
-                    
-                    // Scroll the message into view
-                    messages[index].scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'center'
-                    });
-                }
-            }
+function renameChat(chatId, newTitle) {
+fetch(`/chat/rename/${chatId}`, {
+method: 'POST',
+headers: {
+'Content-Type': 'application/json'
+},
+body: JSON.stringify({
+title: newTitle
+})
+})
+.then(response => response.json())
+.then(data => {
+if (data.status === 'success') {
+// Update chat list item
+const chatItem = document.querySelector(`.chat-item[data-chat-id="${chatId}"]`);
+chatItem.querySelector('.chat-item-title').textContent = newTitle;
 
-            // Initialize arrow key navigation
-            setupArrowKeyNavigation();
+// Update current chat title if this is the active chat
+if (chatId === currentChatId) {
+    currentChatTitle.textContent = newTitle;
+}
+}
+})
+.catch(error => {
+console.error('Error renaming chat:', error);
+});
+}
 
-            // Markdown configuration
-            marked.setOptions({
-                highlight: function(code, lang) {
-                    if (Prism.languages[lang]) {
-                        return Prism.highlight(code, Prism.languages[lang], lang);
-                    } else {
-                        return code;
-                    }
-                },
-                breaks: true,
-                gfm: true
-            });
+function openDeleteModal(chatId) {
+document.getElementById('deleteChatId').value = chatId;
+confirmDeleteModal.show();
+}
 
-            // Initialize
-            updateCurrentModel();
-            resizeTextarea();
-            scrollToBottom();
-            
-            // Ensure input widths are consistent
-            const chatInputWrapper = document.querySelector('.chat-input-wrapper');
-            chatInputWrapper.style.width = '100%';
-            messageInput.style.width = '100%';
-            
-            // Load initial chat if available
-            if (currentChatId) {
-                loadChat(currentChatId);
-            }
+function deleteChat(chatId) {
+fetch(`/chat/delete/${chatId}`, {
+method: 'POST',
+headers: {
+'Content-Type': 'application/json'
+}
+})
+.then(response => response.json())
+.then(data => {
+if (data.status === 'success') {
+// Remove from chat list
+const chatItem = document.querySelector(`.chat-item[data-chat-id="${chatId}"]`);
+chatItem.remove();
 
-            // Event listeners
-            messageInput.addEventListener('input', function() {
-                resizeTextarea();
-                sendMessageBtn.disabled = !messageInput.value.trim();
-            });
+// If this was the current chat, load another one
+if (chatId === currentChatId) {
+    const firstChatId = document.querySelector('.chat-item')?.getAttribute('data-chat-id');
+    if (firstChatId) {
+        loadChat(firstChatId);
+    } else {
+        // No chats left, create a new one
+        createNewChat();
+    }
+}
+}
+})
+.catch(error => {
+console.error('Error deleting chat:', error);
+});
+}
 
-            messageInput.addEventListener('keydown', function(e) {
-                // Enter to send, Shift+Enter for new line
-                if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    // Handle commands
-                    const message = messageInput.value.trim();
-                    if (message === '/newchat') {
-                        messageInput.value = '';
-                        createNewChat();
-                        return;
-                    } else if (message === '/copy') {
-                        messageInput.value = '';
-                        copyLatestCodeBlock();
-                        return;
-                    }
-                    
-                    if (!sendMessageBtn.disabled) {
-                        sendMessage();
-                    }
-                }
-            });
+function clearCurrentChat() {
+// Clear all messages
+chatMessages.innerHTML = '';
+// Reset focus for keyboard navigation
+focusedMessageIndex = -1;
+}
 
-            sendMessageBtn.addEventListener('click', sendMessage);
-            
-            stopGenerationBtn.addEventListener('click', function() {
-                stopGeneration();
-            });
-            
-            modelSelector.addEventListener('change', function() {
-                updateCurrentModel();
-                if (headerModelDropdown) {
-                    headerModelDropdown.value = this.value;
-                }
-            });
+// Keyboard shortcuts
+document.addEventListener('keydown', function(e) {
+// Focus input with / key when not already focused on an input
+if (e.key === '/' && document.activeElement !== messageInput) {
+if (!e.target.matches('input, textarea, select')) {
+e.preventDefault();
+messageInput.focus();
+}
+}
 
-            newChatBtn.addEventListener('click', createNewChat);
+// Option+Enter to focus the chat input
+if (e.altKey && e.key === 'Enter') {
+e.preventDefault();
+messageInput.focus();
+}
 
-            clearChat.addEventListener('click', function() {
-                clearCurrentChat();
-            });
+// Ctrl+N or Cmd+N for new chat
+if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+e.preventDefault();
+createNewChat();
+}
 
-            // Chat list click events using event delegation
-            chatList.addEventListener('click', function(e) {
-                const chatItem = e.target.closest('.chat-item');
-                const renameBtn = e.target.closest('.rename-chat');
-                const deleteBtn = e.target.closest('.delete-chat');
-                
-                if (renameBtn) {
-                    e.stopPropagation();
-                    const chatId = renameBtn.getAttribute('data-chat-id');
-                    openRenameModal(chatId);
-                } else if (deleteBtn) {
-                    e.stopPropagation();
-                    const chatId = deleteBtn.getAttribute('data-chat-id');
-                    openDeleteModal(chatId);
-                } else if (chatItem) {
-                    const chatId = chatItem.getAttribute('data-chat-id');
-                    loadChat(chatId);
-                }
-            });
+// Ctrl+D or Cmd+D for toggle dark mode
+if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
+e.preventDefault();
+themeToggle.click();
+}
 
-            // Copy message buttons using event delegation
-            chatMessages.addEventListener('click', function(e) {
-                const copyBtn = e.target.closest('.copy-message');
-                if (copyBtn) {
-                    const messageEl = copyBtn.closest('.message');
-                    const content = messageEl.querySelector('.message-content').textContent;
-                    copyToClipboard(content);
-                    
-                    // Show feedback
-                    const originalIcon = copyBtn.innerHTML;
-                    copyBtn.innerHTML = '<i class="fas fa-check"></i>';
-                    setTimeout(() => {
-                        copyBtn.innerHTML = originalIcon;
-                    }, 1500);
-                }
-            });
+if (e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey && e.key.toLowerCase() === 's') {
+e.preventDefault();
+toggleSidebarVisibility();
+}
+});
+});
+</script>
 
-            // Modal event handlers
-            document.getElementById('saveChatTitleBtn').addEventListener('click', function() {
-                const chatId = document.getElementById('renameChatId').value;
-                const newTitle = document.getElementById('newChatTitle').value.trim();
-                if (newTitle) {
-                    renameChat(chatId, newTitle);
-                    renameChatModal.hide();
-                }
-            });
-
-            document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
-                const chatId = document.getElementById('deleteChatId').value;
-                deleteChat(chatId);
-                confirmDeleteModal.hide();
-            });
-
-            // Functions
-            let currentEventSource = null;
-            
-            function sendMessage() {
-                if (isWaitingForResponse) return;
-                
-                const message = messageInput.value.trim();
-                if (!message) return;
-                
-                // Handle commands
-                if (message === '/newchat') {
-                    messageInput.value = '';
-                    createNewChat();
-                    return;
-                } else if (message === '/copy') {
-                    messageInput.value = '';
-                    copyLatestCodeBlock();
-                    return;
-                }
-                
-                // Add user message to UI
-                addMessage('user', message);
-                
-                // Clear input
-                messageInput.value = '';
-                resizeTextarea();
-                sendMessageBtn.disabled = true;
-                
-                // Show typing indicator and stop button
-                addTypingIndicator();
-                stopGenerationBtn.classList.remove('d-none');
-                isWaitingForResponse = true;
-                
-                // Get selected model
-                const selectedModel = modelSelector.value;
-                let modelInfo = {};
-
-                // Parse models information from Flask template
-                const modelsInfo = JSON.parse(document.getElementById('models-data').textContent);
-                const isStreamingModel = modelsInfo[selectedModel]?.stream !== false;
-
-                if (isStreamingModel) {
-                    // Stream response
-                    currentEventSource = new EventSource(`/chat?message=${encodeURIComponent(message)}&model=${selectedModel}&chat_id=${currentChatId}`);
-                    
-                    let responseText = '';
-                    let responseContainer = null;
-                    
-                    currentEventSource.onmessage = function(event) {
-                        const data = JSON.parse(event.data);
-                        
-                        if (!responseContainer) {
-                            // Remove typing indicator
-                            removeTypingIndicator();
-                            
-                            // Create new message container
-                            responseContainer = addMessage('assistant', '');
-                        }
-                        
-                        if (data.error) {
-                            responseContainer.querySelector('.message-content').textContent = 'Error: ' + data.error;
-                            currentEventSource.close();
-                            currentEventSource = null;
-                            stopGenerationBtn.classList.add('d-none');
-                            isWaitingForResponse = false;
-                        } else if (data.chunk) {
-                            responseText += data.chunk;
-                            responseContainer.querySelector('.message-content').innerHTML = renderMarkdown(responseText);
-                        }
-                        
-                        if (data.done) {
-                            currentEventSource.close();
-                            currentEventSource = null;
-                            stopGenerationBtn.classList.add('d-none');
-                            isWaitingForResponse = false;
-                            // Apply syntax highlighting to code blocks
-                            Prism.highlightAllUnder(responseContainer);
-                            // Add copy buttons to code blocks
-                            addCopyButtonsToCodeBlocks(responseContainer);
-                        }
-                    };
-                    
-                    currentEventSource.onerror = function() {
-                        removeTypingIndicator();
-                        if (!responseContainer) {
-                            responseContainer = addMessage('assistant', 'Sorry, there was an error processing your request.');
-                        }
-                        currentEventSource.close();
-                        currentEventSource = null;
-                        stopGenerationBtn.classList.add('d-none');
-                        isWaitingForResponse = false;
-                    };
-                } else {
-                    // Non-streaming response
-                    fetch('/chat', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            message: message,
-                            model: selectedModel,
-                            chat_id: currentChatId
-                        })
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        removeTypingIndicator();
-                        if (data.error) {
-                            addMessage('assistant', 'Error: ' + data.error);
-                        } else {
-                            const messageEl = addMessage('assistant', data.response);
-                            Prism.highlightAllUnder(messageEl);
-                            addCopyButtonsToCodeBlocks(messageEl);
-                        }
-                    })
-                    .catch(error => {
-                        removeTypingIndicator();
-                        addMessage('assistant', 'Sorry, there was an error processing your request.');
-                        console.error('Error:', error);
-                    })
-                    .finally(() => {
-                        isWaitingForResponse = false;
-                        stopGenerationBtn.classList.add('d-none');
-                    });
-                }
-            }
-
-            function addMessage(role, content) {
-                const message = document.createElement('div');
-                message.className = `message message-${role}`;
-                
-                const messageContent = document.createElement('div');
-                messageContent.className = 'message-content markdown-content';
-                
-                if (content) {
-                    messageContent.innerHTML = renderMarkdown(content);
-                    
-                    // Add copy button
-                    const messageActions = document.createElement('div');
-                    messageActions.className = 'message-actions';
-                    messageActions.innerHTML = `
-                        <button class="btn btn-sm copy-message" title="Copy message">
-                            <i class="fas fa-copy"></i>
-                        </button>
-                    `;
-                    message.appendChild(messageActions);
-                }
-                
-                message.appendChild(messageContent);
-                chatMessages.appendChild(message);
-                
-                // Auto-scroll to the new message
-                message.scrollIntoView({ behavior: 'smooth', block: 'end' });
-                
-                // Reset focus for keyboard navigation
-                focusedMessageIndex = -1;
-                
-                return message;
-            }
-
-            function addTypingIndicator() {
-                const indicator = document.createElement('div');
-                indicator.className = 'typing-indicator';
-                indicator.innerHTML = `
-                    <div class="typing-dot"></div>
-                    <div class="typing-dot"></div>
-                    <div class="typing-dot"></div>
-                `;
-                indicator.id = 'typingIndicator';
-                chatMessages.appendChild(indicator);
-                indicator.scrollIntoView({ behavior: 'smooth', block: 'end' });
-            }
-
-            function removeTypingIndicator() {
-                const indicator = document.getElementById('typingIndicator');
-                if (indicator) {
-                    indicator.remove();
-                }
-            }
-
-            function renderMarkdown(text) {
-                return marked.parse(text);
-            }
-            
-            function addCopyButtonsToCodeBlocks(container) {
-                const codeBlocks = container.querySelectorAll('pre code');
-                codeBlocks.forEach(codeBlock => {
-                    const pre = codeBlock.parentNode;
-                    
-                    // Don't add button if one already exists
-                    if (pre.querySelector('.code-copy-btn')) return;
-                    
-                    const copyBtn = document.createElement('button');
-                    copyBtn.className = 'code-copy-btn';
-                    copyBtn.innerHTML = '<i class="fas fa-copy"></i> Copy';
-                    copyBtn.addEventListener('click', function() {
-                        const code = codeBlock.textContent;
-                        navigator.clipboard.writeText(code).then(() => {
-                            copyBtn.innerHTML = '<i class="fas fa-check"></i> Copied!';
-                            setTimeout(() => {
-                                copyBtn.innerHTML = '<i class="fas fa-copy"></i> Copy';
-                            }, 2000);
-                        }).catch(err => {
-                            console.error('Failed to copy code:', err);
-                        });
-                    });
-                    
-                    pre.appendChild(copyBtn);
-                });
-            }
-            
-            function copyLatestCodeBlock() {
-                const codeBlocks = document.querySelectorAll('pre code');
-                if (codeBlocks.length > 0) {
-                    // Get the most recent code block
-                    const latestCodeBlock = codeBlocks[codeBlocks.length - 1];
-                    const code = latestCodeBlock.textContent;
-                    
-                    navigator.clipboard.writeText(code).then(() => {
-                        // Show feedback as a temporary message
-                        const tempMsg = addMessage('assistant', 'Code copied to clipboard!');
-                        setTimeout(() => {
-                            tempMsg.remove();
-                        }, 2000);
-                    }).catch(err => {
-                        console.error('Failed to copy code:', err);
-                    });
-                } else {
-                    // Show feedback that no code blocks were found
-                    const tempMsg = addMessage('assistant', 'No code blocks found to copy.');
-                    setTimeout(() => {
-                        tempMsg.remove();
-                    }, 2000);
-                }
-            }
-            
-            function stopGeneration() {
-                if (currentEventSource) {
-                    currentEventSource.close();
-                    currentEventSource = null;
-                    removeTypingIndicator();
-                    stopGenerationBtn.classList.add('d-none');
-                    isWaitingForResponse = false;
-                    
-                    // Indicate to user that generation was stopped
-                    const tempMsg = addMessage('assistant', '_Generation stopped by user._');
-                    setTimeout(() => {
-                        tempMsg.remove();
-                    }, 2000);
-                }
-            }
-
-            function resizeTextarea() {
-                messageInput.style.height = 'auto';
-                messageInput.style.height = (messageInput.scrollHeight) + 'px';
-            }
-
-            function scrollToBottom() {
-                chatMessages.scrollTop = chatMessages.scrollHeight;
-            }
-
-            function updateCurrentModel() {
-                currentModel.textContent = modelSelector.value;
-            }
-
-            function copyToClipboard(text) {
-                navigator.clipboard.writeText(text).catch(err => {
-                    console.error('Failed to copy text:', err);
-                });
-            }
-
-            function createNewChat() {
-                fetch('/chat/new', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        // Add to chat list
-                        const newChatItem = document.createElement('li');
-                        newChatItem.className = 'chat-item';
-                        newChatItem.setAttribute('data-chat-id', data.chat_id);
-                        newChatItem.innerHTML = `
-                            <span class="chat-item-title">${data.chat.title}</span>
-                            <div class="chat-actions">
-                                <button class="btn btn-sm rename-chat" data-chat-id="${data.chat_id}" title="Rename">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button class="btn btn-sm delete-chat" data-chat-id="${data.chat_id}" title="Delete">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </div>
-                        `;
-                        chatList.prepend(newChatItem);
-                        
-                        // Ensure the chat input is consistent
-                        setTimeout(() => {
-                            resizeTextarea();
-                            // Fix width issues
-                            const chatInputWrapper = document.querySelector('.chat-input-wrapper');
-                            chatInputWrapper.style.width = '100%';
-                            messageInput.style.width = '100%';
-                        }, 100);
-                        
-                        // Load the new chat
-                        loadChat(data.chat_id);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error creating new chat:', error);
-                });
-            }
-
-            function loadChat(chatId) {
-                if (chatId === currentChatId) return;
-                
-                fetch(`/chat/history/${chatId}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        // Update current chat ID
-                        currentChatId = chatId;
-                        
-                        // Update chat title
-                        currentChatTitle.textContent = data.chat.title;
-                        
-                        // Update chat list UI
-                        const chatItems = chatList.querySelectorAll('.chat-item');
-                        chatItems.forEach(item => {
-                            item.classList.remove('active');
-                            if (item.getAttribute('data-chat-id') === chatId) {
-                                item.classList.add('active');
-                            }
-                        });
-                        
-                        // Clear and repopulate messages
-                        chatMessages.innerHTML = '';
-                        
-                        // Skip the default greeting message
-                        const messagesToShow = data.chat.messages.filter((msg, index) => {
-                            // Skip the first assistant message (which is typically the greeting)
-                            return !(index === 0 && msg.role === 'assistant' && 
-                                     msg.content.includes("Hello! I'm your AI assistant"));
-                        });
-                        
-                        messagesToShow.forEach(message => {
-                            const messageEl = addMessage(message.role, message.content);
-                            if (message.content) {
-                                Prism.highlightAllUnder(messageEl);
-                                addCopyButtonsToCodeBlocks(messageEl);
-                            }
-                        });
-                        
-                        // Close mobile sidebar if open
-                        sidebar.classList.remove('show');
-                        
-                        // Ensure input field is consistent
-                        setTimeout(() => {
-                            resizeTextarea();
-                            // Fix width issues
-                            const chatInputWrapper = document.querySelector('.chat-input-wrapper');
-                            chatInputWrapper.style.width = '100%';
-                            messageInput.style.width = '100%';
-                        }, 100);
-                        
-                        // Reset focus for keyboard navigation
-                        focusedMessageIndex = -1;
-                    }
-                })
-                .catch(error => {
-                    console.error('Error loading chat:', error);
-                });
-            }
-
-            function openRenameModal(chatId) {
-                // Find the current title
-                const chatItem = document.querySelector(`.chat-item[data-chat-id="${chatId}"]`);
-                const currentTitle = chatItem.querySelector('.chat-item-title').textContent;
-                
-                // Set values in modal
-                document.getElementById('renameChatId').value = chatId;
-                document.getElementById('newChatTitle').value = currentTitle;
-                
-                // Show modal
-                renameChatModal.show();
-                
-                // Focus input
-                setTimeout(() => {
-                    document.getElementById('newChatTitle').focus();
-                    document.getElementById('newChatTitle').select();
-                }, 500);
-            }
-
-            function renameChat(chatId, newTitle) {
-                fetch(`/chat/rename/${chatId}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        title: newTitle
-                    })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        // Update chat list item
-                        const chatItem = document.querySelector(`.chat-item[data-chat-id="${chatId}"]`);
-                        chatItem.querySelector('.chat-item-title').textContent = newTitle;
-                        
-                        // Update current chat title if this is the active chat
-                        if (chatId === currentChatId) {
-                            currentChatTitle.textContent = newTitle;
-                        }
-                    }
-                })
-                .catch(error => {
-                    console.error('Error renaming chat:', error);
-                });
-            }
-
-            function openDeleteModal(chatId) {
-                document.getElementById('deleteChatId').value = chatId;
-                confirmDeleteModal.show();
-            }
-
-            function deleteChat(chatId) {
-                fetch(`/chat/delete/${chatId}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        // Remove from chat list
-                        const chatItem = document.querySelector(`.chat-item[data-chat-id="${chatId}"]`);
-                        chatItem.remove();
-                        
-                        // If this was the current chat, load another one
-                        if (chatId === currentChatId) {
-                            const firstChatId = document.querySelector('.chat-item')?.getAttribute('data-chat-id');
-                            if (firstChatId) {
-                                loadChat(firstChatId);
-                            } else {
-                                // No chats left, create a new one
-                                createNewChat();
-                            }
-                        }
-                    }
-                })
-                .catch(error => {
-                    console.error('Error deleting chat:', error);
-                });
-            }
-
-            function clearCurrentChat() {
-                // Clear all messages
-                chatMessages.innerHTML = '';
-                // Reset focus for keyboard navigation
-                focusedMessageIndex = -1;
-            }
-
-            // Keyboard shortcuts
-            document.addEventListener('keydown', function(e) {
-                // Focus input with / key when not already focused on an input
-                if (e.key === '/' && document.activeElement !== messageInput) {
-                    if (!e.target.matches('input, textarea, select')) {
-                        e.preventDefault();
-                        messageInput.focus();
-                    }
-                }
-                
-                // Option+Enter to focus the chat input
-                if (e.altKey && e.key === 'Enter') {
-                    e.preventDefault();
-                    messageInput.focus();
-                }
-                
-                // Ctrl+N or Cmd+N for new chat
-                if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
-                    e.preventDefault();
-                    createNewChat();
-                }
-                
-                // Ctrl+D or Cmd+D for toggle dark mode
-                if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
-                    e.preventDefault();
-                    themeToggle.click();
-                }
-                
-                // Shift+S to toggle sidebar
-                if (e.shiftKey && e.key.toLowerCase() === 's') {
-                    e.preventDefault();
-                    toggleSidebarVisibility();
-                }
-            });
-        });
-    </script>
-
-    <script id="models-data" type="application/json">
-        {{ models|tojson|safe }}
-    </script>
+<script id="models-data" type="application/json">
+{{ models|tojson|safe }}
+</script>
 </body>
 </html>
