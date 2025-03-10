@@ -14,7 +14,16 @@ app.secret_key = os.getenv("FLASK_SECRET_KEY", "your-default-secret-key")
 
 CHAT_HISTORY_FILE = 'chat_histories.json'
 
+MESSAGE_HISTORY_LIMIT = 5  
+
 chat_histories = {}
+
+def get_limited_message_history(messages, limit=5):
+    
+    if len(messages) <= limit:
+        return messages.copy()
+    
+    return messages[-limit:]
 
 def load_chat_histories():
     global chat_histories
@@ -48,21 +57,14 @@ def save_chat_histories():
 
 load_chat_histories()
 
-openai_api_key = os.getenv('OPENAI_API_KEY')
-claude_api_key = os.getenv('CLAUDE_API_KEY')
-
-# Initialize clients using the retrieved keys
-openai_client = openai.OpenAI(api_key=openai_api_key)
-anthropic_client = Anthropic(api_key=claude_api_key)
+openai_client = openai.OpenAI(api_key=os.getenv('API_KEY'))
+anthropic_client = Anthropic(api_key=os.getenv('CLAUDE_API_KEY'))
 
 basic_system_prompt = '''
 You are AI coding Assistant. Imagine you are a GOD of programming
 and you can do basically everything user request to do.
 Answer shortly always, if not requested for long response.
 '''
-
-
-
 
 MODELS = {
     'gpt-4o': {'provider': 'openai', 'name': 'gpt-4o', 'stream': True},
@@ -72,7 +74,6 @@ MODELS = {
     'claude-3-5-sonnet': {'provider': 'anthropic', 'name': 'claude-3-5-sonnet-20240620', 'stream': True},
     'claude-3-7-sonnet': {'provider': 'anthropic', 'name': 'claude-3-7-sonnet-20250219', 'stream': True},
 }
-
 
 @app.route('/')
 def index():
@@ -102,36 +103,106 @@ def index():
     
     return render_template('index.html', models=MODELS, chats=user_chats)
 
-@app.route('/chat/new', methods=['POST'])
-def new_chat():
+@app.route('/chat', methods=['POST', 'GET'])
+def chat():
     if 'user_id' not in session:
         session['user_id'] = str(uuid.uuid4())
     
     user_id = session['user_id']
     
-    chat_id = str(uuid.uuid4())
+    if request.method == 'GET':
+        message = request.args.get('message', '')
+        model_key = request.args.get('model', 'gpt-4o')
+        chat_id = request.args.get('chat_id', 'default')
+    else:
+        data = request.json
+        message = data.get('message', '')
+        model_key = data.get('model', 'gpt-4o')
+        chat_id = data.get('chat_id', 'default')
     
     if user_id not in chat_histories:
         chat_histories[user_id] = {}
     
-    chat_histories[user_id][chat_id] = {
-        'title': 'New Chat',
-        'messages': [
-            {
-                'role': 'assistant',
-                'content': '👋 Hello! I\'m your AI assistant. How can I help you today?'
-            }
-        ],
-        'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    }
+    if chat_id not in chat_histories[user_id]:
+        chat_histories[user_id][chat_id] = {
+            'title': 'New Chat',
+            'messages': [
+                {
+                    'role': 'assistant',
+                    'content': '👋 Hello! I\'m your AI assistant. How can I help you today?'
+                }
+            ],
+            'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        }
+    
+    chat_histories[user_id][chat_id]['messages'].append({
+        'role': 'user',
+        'content': message
+    })
+    
+    if chat_histories[user_id][chat_id]['title'] == 'New Chat' and len(message) > 0:
+        title = message[:30] + ('...' if len(message) > 30 else '')
+        chat_histories[user_id][chat_id]['title'] = title
     
     save_chat_histories()
     
-    return jsonify({
-        'status': 'success',
-        'chat_id': chat_id,
-        'chat': chat_histories[user_id][chat_id]
-    })
+    model_info = MODELS.get(model_key)
+    
+    if not model_info:
+        return jsonify({'error': 'Invalid model selection', 'done': True})
+    
+    try:
+        
+        if model_info['provider'] == 'openai':
+            if model_info.get('stream', True):
+                return stream_openai_response(message, model_info['name'], user_id, chat_id, 
+                                            history_limit=MESSAGE_HISTORY_LIMIT)
+            else:
+                
+                try:
+                    response_data = send_request_to_openai_no_stream(message, model_info['name'], user_id, chat_id,
+                                                              history_limit=MESSAGE_HISTORY_LIMIT)
+                    
+                    response_content = response_data['content']
+                    token_usage = response_data['token_usage']
+                    
+                    return jsonify({
+                        'response': response_content, 
+                        'token_usage': token_usage,
+                        'done': True
+                    })
+                except Exception as e:
+                    print(f"Error in non-streaming OpenAI request: {str(e)}")
+                    error_msg = f"Sorry, there was an error: {str(e)}"
+                    
+                    if chat_histories[user_id][chat_id]['messages'][-1]['role'] != 'assistant':
+                        chat_histories[user_id][chat_id]['messages'].append({
+                            'role': 'assistant',
+                            'content': error_msg
+                        })
+                        save_chat_histories()
+                    return jsonify({'error': error_msg, 'done': True})
+                    
+        else:
+            if model_info.get('stream', True):
+                return stream_anthropic_response(message, model_info['name'], user_id, chat_id,
+                                               history_limit=MESSAGE_HISTORY_LIMIT)
+            else:
+                response = send_request_to_anthropic(message, model_info['name'], user_id, chat_id,
+                                                   history_limit=MESSAGE_HISTORY_LIMIT)
+                return jsonify({'response': response, 'done': True})
+    
+    except Exception as e:
+        error_msg = f"Sorry, there was an error processing your request: {str(e)}"
+        print(f"General error in chat route: {str(e)}")
+        
+        if chat_histories[user_id][chat_id]['messages'][-1]['role'] != 'assistant':
+            chat_histories[user_id][chat_id]['messages'].append({
+                'role': 'assistant',
+                'content': error_msg
+            })
+            save_chat_histories()
+        return jsonify({'error': error_msg, 'done': True})
 
 @app.route('/chat/history/<chat_id>', methods=['GET'])
 def get_chat_history(chat_id):
@@ -210,120 +281,17 @@ def delete_chat(chat_id):
         'status': 'success'
     })
 
-
-
-
-
-
-
-
-
-@app.route('/chat', methods=['POST', 'GET'])
-def chat():
-    if 'user_id' not in session:
-        session['user_id'] = str(uuid.uuid4())
-    
-    user_id = session['user_id']
-    
-    if request.method == 'GET':
-        message = request.args.get('message', '')
-        model_key = request.args.get('model', 'gpt-4o')
-        chat_id = request.args.get('chat_id', 'default')
-    else:
-        data = request.json
-        message = data.get('message', '')
-        model_key = data.get('model', 'gpt-4o')
-        chat_id = data.get('chat_id', 'default')
-    
-    if user_id not in chat_histories:
-        chat_histories[user_id] = {}
-    
-    if chat_id not in chat_histories[user_id]:
-        chat_histories[user_id][chat_id] = {
-            'title': 'New Chat',
-            'messages': [
-                {
-                    'role': 'assistant',
-                    'content': '👋 Hello! I\'m your AI assistant. How can I help you today?'
-                }
-            ],
-            'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        }
-    
-    # Save the user message to history
-    chat_histories[user_id][chat_id]['messages'].append({
-        'role': 'user',
-        'content': message
-    })
-    
-    # Update chat title if this is the first message
-    if chat_histories[user_id][chat_id]['title'] == 'New Chat' and len(message) > 0:
-        title = message[:30] + ('...' if len(message) > 30 else '')
-        chat_histories[user_id][chat_id]['title'] = title
-    
-    save_chat_histories()
-    
-    # Get model info
-    model_info = MODELS.get(model_key)
-    
-    if not model_info:
-        return jsonify({'error': 'Invalid model selection', 'done': True})
-    
-    try:
-        # Handle OpenAI models
-        if model_info['provider'] == 'openai':
-            if model_info.get('stream', True):
-                return stream_openai_response(message, model_info['name'], user_id, chat_id)
-            else:
-                # Non-streaming OpenAI request
-                try:
-                    response = send_request_to_openai_no_stream(message, model_info['name'], user_id, chat_id)
-                    return jsonify({'response': response, 'done': True})
-                except Exception as e:
-                    print(f"Error in non-streaming OpenAI request: {str(e)}")
-                    error_msg = f"Sorry, there was an error: {str(e)}"
-                    # Add error message to chat history if not already added
-                    if chat_histories[user_id][chat_id]['messages'][-1]['role'] != 'assistant':
-                        chat_histories[user_id][chat_id]['messages'].append({
-                            'role': 'assistant',
-                            'content': error_msg
-                        })
-                        save_chat_histories()
-                    return jsonify({'error': error_msg, 'done': True})
-                    
-        # Handle Anthropic models
-        else:
-            if model_info.get('stream', True):
-                return stream_anthropic_response(message, model_info['name'], user_id, chat_id)
-            else:
-                response = send_request_to_anthropic(message, model_info['name'], user_id, chat_id)
-                return jsonify({'response': response, 'done': True})
-    
-    except Exception as e:
-        error_msg = f"Sorry, there was an error processing your request: {str(e)}"
-        print(f"General error in chat route: {str(e)}")
-        # Add error message to chat history if not already added
-        if chat_histories[user_id][chat_id]['messages'][-1]['role'] != 'assistant':
-            chat_histories[user_id][chat_id]['messages'].append({
-                'role': 'assistant',
-                'content': error_msg
-            })
-            save_chat_histories()
-        return jsonify({'error': error_msg, 'done': True})
-
-
-
-
-
-
-def stream_openai_response(content, model_name, user_id, chat_id, system_prompt=basic_system_prompt):
+def stream_openai_response(content, model_name, user_id, chat_id, system_prompt=basic_system_prompt, history_limit=5):
     def generate():
-        
         response_saved = False
         try:
             
+            all_messages = chat_histories[user_id][chat_id]['messages']
+            
+            limited_messages = get_limited_message_history(all_messages, history_limit)
+            
             previous_messages = []
-            for msg in chat_histories[user_id][chat_id]['messages']:
+            for msg in limited_messages:
                 role = "assistant" if msg['role'] == 'assistant' else "user"
                 previous_messages.append({"role": role, "content": msg['content']})
             
@@ -353,15 +321,32 @@ def stream_openai_response(content, model_name, user_id, chat_id, system_prompt=
                             full_content += content_chunk
                             yield f"data: {json.dumps({'chunk': content_chunk, 'done': False})}\n\n"
                 
+                non_streaming_response = openai_client.chat.completions.create(
+                    model=model_name,
+                    messages=messages_to_send,
+                    stream=False
+                )
+                
+                input_tokens = non_streaming_response.usage.prompt_tokens
+                output_tokens = non_streaming_response.usage.completion_tokens
+                total_tokens = non_streaming_response.usage.total_tokens
+                
+                print(f"Token usage for {model_name}: Input: {input_tokens}, Output: {output_tokens}, Total: {total_tokens}")
+                
                 chat_histories[user_id][chat_id]['messages'].append({
                     'role': 'assistant',
-                    'content': full_content
+                    'content': full_content,
+                    'token_usage': {
+                        'input_tokens': input_tokens,
+                        'output_tokens': output_tokens,
+                        'total_tokens': total_tokens
+                    }
                 })
                 
                 save_chat_histories()
                 response_saved = True
                 
-                yield f"data: {json.dumps({'chunk': '', 'done': True})}\n\n"
+                yield f"data: {json.dumps({'chunk': '', 'done': True, 'token_usage': {'input_tokens': input_tokens, 'output_tokens': output_tokens, 'total_tokens': total_tokens}})}\n\n"
             except Exception as e:
                 
                 if not response_saved and full_content:
@@ -382,36 +367,92 @@ def stream_openai_response(content, model_name, user_id, chat_id, system_prompt=
     
     return Response(stream_with_context(generate()), content_type='text/event-stream')
 
-
-
-
-
-def send_request_to_openai_no_stream(content, model_name, user_id, chat_id, system_prompt=basic_system_prompt):
+def send_request_to_openai_no_stream(content, model_name, user_id, chat_id, system_prompt=basic_system_prompt, history_limit=5):
     try:
-        # Format previous messages
+        
+        all_messages = chat_histories[user_id][chat_id]['messages']
+        
+        limited_messages = get_limited_message_history(all_messages, history_limit)
+        
         previous_messages = []
-        for msg in chat_histories[user_id][chat_id]['messages']:
+        for msg in limited_messages:
             role = "assistant" if msg['role'] == 'assistant' else "user"
             previous_messages.append({"role": role, "content": msg['content']})
         
-        # Remove the latest user message as we'll add it manually
         if previous_messages:
             previous_messages.pop()
         
-        # Prepare full message list including system prompt
         messages_to_send = [{"role": "system", "content": system_prompt}] + previous_messages + [{"role": "user", "content": content}]
         
-        # Make the API call
         response = openai_client.chat.completions.create(
             model=model_name,
             messages=messages_to_send,
         )
         
-        # Extract the response content
+        response_content = response.choices[0].message.content
+        
+        input_tokens = response.usage.prompt_tokens
+        output_tokens = response.usage.completion_tokens
+        total_tokens = response.usage.total_tokens
+        
+        print(f"Token usage for {model_name}: Input: {input_tokens}, Output: {output_tokens}, Total: {total_tokens}")
+        
+        chat_histories[user_id][chat_id]['messages'].append({
+            'role': 'assistant',
+            'content': response_content,
+            'token_usage': {
+                'input_tokens': input_tokens,
+                'output_tokens': output_tokens,
+                'total_tokens': total_tokens
+            }
+        })
+        
+        save_chat_histories()
+        
+        return {
+            'content': response_content,
+            'token_usage': {
+                'input_tokens': input_tokens, 
+                'output_tokens': output_tokens, 
+                'total_tokens': total_tokens
+            }
+        }
+    
+    except Exception as e:
+        error_msg = f"Error in non-streaming request: {str(e)}"
+        print(error_msg)
+        
+        chat_histories[user_id][chat_id]['messages'].append({
+            'role': 'assistant',
+            'content': f"Sorry, an error occurred: {str(e)}"
+        })
+        save_chat_histories()
+        raise
+def send_request_to_openai_no_stream(content, model_name, user_id, chat_id, system_prompt=basic_system_prompt, history_limit=5):
+    try:
+        
+        all_messages = chat_histories[user_id][chat_id]['messages']
+        
+        limited_messages = get_limited_message_history(all_messages, history_limit)
+        
+        previous_messages = []
+        for msg in limited_messages:
+            role = "assistant" if msg['role'] == 'assistant' else "user"
+            previous_messages.append({"role": role, "content": msg['content']})
+        
+        if previous_messages:
+            previous_messages.pop()
+        
+        messages_to_send = [{"role": "system", "content": system_prompt}] + previous_messages + [{"role": "user", "content": content}]
+        
+        response = openai_client.chat.completions.create(
+            model=model_name,
+            messages=messages_to_send,
+        )
+        
         response_content = response.choices[0].message.content
         print(f"Received response from {model_name}: {response_content}")
         
-        # Save the response to chat history
         chat_histories[user_id][chat_id]['messages'].append({
             'role': 'assistant',
             'content': response_content
@@ -424,7 +465,7 @@ def send_request_to_openai_no_stream(content, model_name, user_id, chat_id, syst
     except Exception as e:
         error_msg = f"Error in non-streaming request: {str(e)}"
         print(error_msg)
-        # Add error message to chat history
+        
         chat_histories[user_id][chat_id]['messages'].append({
             'role': 'assistant',
             'content': f"Sorry, an error occurred: {str(e)}"
@@ -432,28 +473,27 @@ def send_request_to_openai_no_stream(content, model_name, user_id, chat_id, syst
         save_chat_histories()
         raise
 
-
-
-def stream_anthropic_response(content, model_name, user_id, chat_id, system_prompt=basic_system_prompt):
+def stream_anthropic_response(content, model_name, user_id, chat_id, system_prompt=basic_system_prompt, history_limit=5):
     def generate():
         response_saved = False
         full_content = ""
         
         try:
-            # Format previous messages for Anthropic's API
+            
+            all_messages = chat_histories[user_id][chat_id]['messages']
+            
+            limited_messages = get_limited_message_history(all_messages, history_limit)
+            
             previous_messages = []
-            for msg in chat_histories[user_id][chat_id]['messages']:
+            for msg in limited_messages:
                 role = "assistant" if msg['role'] == 'assistant' else "user"
                 previous_messages.append({"role": role, "content": msg['content']})
             
-            # Remove the latest user message as we'll add it manually
             if previous_messages:
                 previous_messages.pop()
             
-            # Set up the messages format
             messages = previous_messages + [{"role": "user", "content": content}]
             
-            # Stream the response from Anthropic
             with anthropic_client.messages.stream(
                 model=model_name,
                 system=system_prompt,
@@ -465,7 +505,6 @@ def stream_anthropic_response(content, model_name, user_id, chat_id, system_prom
                     full_content += text
                     yield f"data: {json.dumps({'chunk': text, 'done': False})}\n\n"
             
-            # Save the complete response to history
             chat_histories[user_id][chat_id]['messages'].append({
                 'role': 'assistant',
                 'content': full_content
@@ -477,7 +516,7 @@ def stream_anthropic_response(content, model_name, user_id, chat_id, system_prom
             yield f"data: {json.dumps({'chunk': '', 'done': True})}\n\n"
             
         except Exception as e:
-            # If we got partial content but encountered an error, still save what we have
+            
             if not response_saved and full_content:
                 chat_histories[user_id][chat_id]['messages'].append({
                     'role': 'assistant',
@@ -491,22 +530,23 @@ def stream_anthropic_response(content, model_name, user_id, chat_id, system_prom
     
     return Response(stream_with_context(generate()), content_type='text/event-stream')
 
-def send_request_to_anthropic(content, model_name, user_id, chat_id, system_prompt=basic_system_prompt):
+def send_request_to_anthropic(content, model_name, user_id, chat_id, system_prompt=basic_system_prompt, history_limit=5):
     try:
-        # Format previous messages for Anthropic's API
+        
+        all_messages = chat_histories[user_id][chat_id]['messages']
+        
+        limited_messages = get_limited_message_history(all_messages, history_limit)
+        
         previous_messages = []
-        for msg in chat_histories[user_id][chat_id]['messages']:
+        for msg in limited_messages:
             role = "assistant" if msg['role'] == 'assistant' else "user"
             previous_messages.append({"role": role, "content": msg['content']})
         
-        # Remove the latest user message as we'll add it manually
         if previous_messages:
             previous_messages.pop()
         
-        # Set up the messages format
         messages = previous_messages + [{"role": "user", "content": content}]
         
-        # Call Anthropic's API
         response = anthropic_client.messages.create(
             model=model_name,
             system=system_prompt,
@@ -515,19 +555,15 @@ def send_request_to_anthropic(content, model_name, user_id, chat_id, system_prom
             temperature=0.7
         )
         
-        # Get the response content
         response_content = response.content[0].text
         
-        # Store response in chat history
         chat_histories[user_id][chat_id]['messages'].append({
             'role': 'assistant',
             'content': response_content
         })
         
-        # Save updated chat histories
         save_chat_histories()
         
-        # Return the content
         return response_content
     
     except Exception as e:
