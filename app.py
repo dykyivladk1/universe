@@ -1,3 +1,4 @@
+
 from flask import Flask, render_template, request, jsonify, Response, stream_with_context, session
 import os
 import openai
@@ -57,8 +58,11 @@ def save_chat_histories():
 
 load_chat_histories()
 
-openai_client = openai.OpenAI(api_key=os.getenv('API_KEY'))
-anthropic_client = Anthropic(api_key=os.getenv('CLAUDE_API_KEY'))
+openai_api_key = os.getenv('OPENAI_API_KEY')
+anthropic_api_key = os.getenv('CLAUDE_API_KEY')
+
+openai_client = openai.OpenAI(api_key=openai_api_key)
+anthropic_client = Anthropic(api_key=anthropic_api_key)
 
 basic_system_prompt = '''
 You are AI coding Assistant. Imagine you are a GOD of programming
@@ -160,15 +164,11 @@ def chat():
             else:
                 
                 try:
-                    response_data = send_request_to_openai_no_stream(message, model_info['name'], user_id, chat_id,
+                    response_content = send_request_to_openai_no_stream(message, model_info['name'], user_id, chat_id,
                                                               history_limit=MESSAGE_HISTORY_LIMIT)
                     
-                    response_content = response_data['content']
-                    token_usage = response_data['token_usage']
-                    
                     return jsonify({
-                        'response': response_content, 
-                        'token_usage': token_usage,
+                        'response': response_content,
                         'done': True
                     })
                 except Exception as e:
@@ -285,7 +285,6 @@ def stream_openai_response(content, model_name, user_id, chat_id, system_prompt=
     def generate():
         response_saved = False
         try:
-            
             all_messages = chat_histories[user_id][chat_id]['messages']
             
             limited_messages = get_limited_message_history(all_messages, history_limit)
@@ -321,36 +320,17 @@ def stream_openai_response(content, model_name, user_id, chat_id, system_prompt=
                             full_content += content_chunk
                             yield f"data: {json.dumps({'chunk': content_chunk, 'done': False})}\n\n"
                 
-                non_streaming_response = openai_client.chat.completions.create(
-                    model=model_name,
-                    messages=messages_to_send,
-                    stream=False
-                )
-                
-                input_tokens = non_streaming_response.usage.prompt_tokens
-                output_tokens = non_streaming_response.usage.completion_tokens
-                total_tokens = non_streaming_response.usage.total_tokens
-                
-                print(f"Token usage for {model_name}: Input: {input_tokens}, Output: {output_tokens}, Total: {total_tokens}")
-                
                 chat_histories[user_id][chat_id]['messages'].append({
                     'role': 'assistant',
-                    'content': full_content,
-                    'token_usage': {
-                        'input_tokens': input_tokens,
-                        'output_tokens': output_tokens,
-                        'total_tokens': total_tokens
-                    }
+                    'content': full_content
                 })
                 
                 save_chat_histories()
                 response_saved = True
                 
-                yield f"data: {json.dumps({'chunk': '', 'done': True, 'token_usage': {'input_tokens': input_tokens, 'output_tokens': output_tokens, 'total_tokens': total_tokens}})}\n\n"
+                yield f"data: {json.dumps({'chunk': '', 'done': True})}\n\n"
             except Exception as e:
-                
                 if not response_saved and full_content:
-                    
                     chat_histories[user_id][chat_id]['messages'].append({
                         'role': 'assistant',
                         'content': full_content
@@ -369,7 +349,6 @@ def stream_openai_response(content, model_name, user_id, chat_id, system_prompt=
 
 def send_request_to_openai_no_stream(content, model_name, user_id, chat_id, system_prompt=basic_system_prompt, history_limit=5):
     try:
-        
         all_messages = chat_histories[user_id][chat_id]['messages']
         
         limited_messages = get_limited_message_history(all_messages, history_limit)
@@ -390,68 +369,6 @@ def send_request_to_openai_no_stream(content, model_name, user_id, chat_id, syst
         )
         
         response_content = response.choices[0].message.content
-        
-        input_tokens = response.usage.prompt_tokens
-        output_tokens = response.usage.completion_tokens
-        total_tokens = response.usage.total_tokens
-        
-        print(f"Token usage for {model_name}: Input: {input_tokens}, Output: {output_tokens}, Total: {total_tokens}")
-        
-        chat_histories[user_id][chat_id]['messages'].append({
-            'role': 'assistant',
-            'content': response_content,
-            'token_usage': {
-                'input_tokens': input_tokens,
-                'output_tokens': output_tokens,
-                'total_tokens': total_tokens
-            }
-        })
-        
-        save_chat_histories()
-        
-        return {
-            'content': response_content,
-            'token_usage': {
-                'input_tokens': input_tokens, 
-                'output_tokens': output_tokens, 
-                'total_tokens': total_tokens
-            }
-        }
-    
-    except Exception as e:
-        error_msg = f"Error in non-streaming request: {str(e)}"
-        print(error_msg)
-        
-        chat_histories[user_id][chat_id]['messages'].append({
-            'role': 'assistant',
-            'content': f"Sorry, an error occurred: {str(e)}"
-        })
-        save_chat_histories()
-        raise
-def send_request_to_openai_no_stream(content, model_name, user_id, chat_id, system_prompt=basic_system_prompt, history_limit=5):
-    try:
-        
-        all_messages = chat_histories[user_id][chat_id]['messages']
-        
-        limited_messages = get_limited_message_history(all_messages, history_limit)
-        
-        previous_messages = []
-        for msg in limited_messages:
-            role = "assistant" if msg['role'] == 'assistant' else "user"
-            previous_messages.append({"role": role, "content": msg['content']})
-        
-        if previous_messages:
-            previous_messages.pop()
-        
-        messages_to_send = [{"role": "system", "content": system_prompt}] + previous_messages + [{"role": "user", "content": content}]
-        
-        response = openai_client.chat.completions.create(
-            model=model_name,
-            messages=messages_to_send,
-        )
-        
-        response_content = response.choices[0].message.content
-        print(f"Received response from {model_name}: {response_content}")
         
         chat_histories[user_id][chat_id]['messages'].append({
             'role': 'assistant',
@@ -479,7 +396,6 @@ def stream_anthropic_response(content, model_name, user_id, chat_id, system_prom
         full_content = ""
         
         try:
-            
             all_messages = chat_histories[user_id][chat_id]['messages']
             
             limited_messages = get_limited_message_history(all_messages, history_limit)
@@ -516,7 +432,6 @@ def stream_anthropic_response(content, model_name, user_id, chat_id, system_prom
             yield f"data: {json.dumps({'chunk': '', 'done': True})}\n\n"
             
         except Exception as e:
-            
             if not response_saved and full_content:
                 chat_histories[user_id][chat_id]['messages'].append({
                     'role': 'assistant',
@@ -532,7 +447,6 @@ def stream_anthropic_response(content, model_name, user_id, chat_id, system_prom
 
 def send_request_to_anthropic(content, model_name, user_id, chat_id, system_prompt=basic_system_prompt, history_limit=5):
     try:
-        
         all_messages = chat_histories[user_id][chat_id]['messages']
         
         limited_messages = get_limited_message_history(all_messages, history_limit)
