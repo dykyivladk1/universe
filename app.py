@@ -1,12 +1,24 @@
+"""
+Flask AI Chat Application
 
-from flask import Flask, render_template, request, jsonify, Response, stream_with_context, session, redirect
+A web application that provides an interface for users to chat with various AI models
+from OpenAI and Anthropic. Features include chat history management, model selection,
+and streaming responses.
+
+The application stores chat histories in a JSON file and supports multiple users
+through session management. It handles both streaming and non-streaming responses
+from different AI models.
+"""
+
 import os
-import openai
-from anthropic import Anthropic  
-from dotenv import load_dotenv
 import json
 import uuid
 from datetime import datetime
+
+from flask import Flask, render_template, request, jsonify, Response, stream_with_context, session, redirect
+import openai
+from anthropic import Anthropic
+from dotenv import load_dotenv
 
 load_dotenv()
 
@@ -14,55 +26,11 @@ app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "your-default-secret-key")
 
 CHAT_HISTORY_FILE = 'chat_histories.json'
-
-MESSAGE_HISTORY_LIMIT = 5  
-
+MESSAGE_HISTORY_LIMIT = 5
 chat_histories = {}
 
-def get_limited_message_history(messages, limit=5):
-    
-    if len(messages) <= limit:
-        return messages.copy()
-    
-    return messages[-limit:]
-
-def load_chat_histories():
-    global chat_histories
-    try:
-        if os.path.exists(CHAT_HISTORY_FILE):
-            with open(CHAT_HISTORY_FILE, 'r') as f:
-                chat_histories = json.load(f)
-            print(f"Chat histories loaded from {CHAT_HISTORY_FILE}")
-    except Exception as e:
-        print(f"Error loading chat histories: {str(e)}")
-        
-        chat_histories = {}
-
-def save_chat_histories():
-    try:
-        directory = os.path.dirname(CHAT_HISTORY_FILE)
-        if directory and not os.path.exists(directory):
-            os.makedirs(directory)
-            
-        serializable_histories = json.dumps(chat_histories, default=str, indent=2)
-        
-        with open(CHAT_HISTORY_FILE, 'w') as f:
-            f.write(serializable_histories)
-            
-        print(f"Chat histories saved to {CHAT_HISTORY_FILE}")
-    except Exception as e:
-        print(f"Error saving chat histories: {str(e)}")
-        
-        import traceback
-        traceback.print_exc()
-
-load_chat_histories()
-
-openai_api_key = os.getenv('OPENAI_API_KEY')
-anthropic_api_key = os.getenv('CLAUDE_API_KEY')
-
-openai_client = openai.OpenAI(api_key=openai_api_key)
-anthropic_client = Anthropic(api_key=anthropic_api_key)
+openai_client = openai.OpenAI(api_key=os.getenv('API_KEY'))
+anthropic_client = Anthropic(api_key=os.getenv('CLAUDE_API_KEY'))
 
 basic_system_prompt = '''
 You are AI coding Assistant. Imagine you are a GOD of programming
@@ -80,252 +48,44 @@ MODELS = {
 }
 
 
-@app.route('/chat/new', methods=['GET', 'POST'])
-def new_chat():
-    if 'user_id' not in session:
-        session['user_id'] = str(uuid.uuid4())
-    
-    user_id = session['user_id']
-    
-    # Generate a new chat ID
-    chat_id = str(uuid.uuid4())
-    
-    # Initialize the new chat with default message
-    chat_histories[user_id][chat_id] = {
-        'title': 'New Chat',
-        'messages': [
-            {
-                'role': 'assistant',
-                'content': '👋 Hello! I\'m your AI assistant. How can I help you today?'
-            }
-        ],
-        'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    }
-    
-    # Save the updated chat histories
-    save_chat_histories()
-    
-    # For POST requests, return JSON
-    if request.method == 'POST':
-        return jsonify({
-            'status': 'success',
-            'chat_id': chat_id,
-            'chat': chat_histories[user_id][chat_id]
-        })
-    
-    # For GET requests, redirect to the main page
-    return redirect('/')
+def get_limited_message_history(messages, limit=5):
+    if len(messages) <= limit:
+        return messages.copy()
+    return messages[-limit:]
 
 
-
-@app.route('/')
-def index():
-    
-    if 'user_id' not in session:
-        session['user_id'] = str(uuid.uuid4())
-    
-    user_id = session['user_id']
-    
-    if user_id not in chat_histories:
-        chat_histories[user_id] = {
-            'default': {
-                'title': 'New Chat',
-                'messages': [
-                    {
-                        'role': 'assistant',
-                        'content': '👋 Hello! I\'m your AI assistant. How can I help you today?'
-                    }
-                ],
-                'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            }
-        }
-        
-        save_chat_histories()
-    
-    user_chats = chat_histories[user_id]
-    
-    return render_template('index.html', models=MODELS, chats=user_chats)
-
-@app.route('/chat', methods=['POST', 'GET'])
-def chat():
-    if 'user_id' not in session:
-        session['user_id'] = str(uuid.uuid4())
-    
-    user_id = session['user_id']
-    
-    if request.method == 'GET':
-        message = request.args.get('message', '')
-        model_key = request.args.get('model', 'gpt-4o')
-        chat_id = request.args.get('chat_id', 'default')
-    else:
-        data = request.json
-        message = data.get('message', '')
-        model_key = data.get('model', 'gpt-4o')
-        chat_id = data.get('chat_id', 'default')
-    
-    if user_id not in chat_histories:
-        chat_histories[user_id] = {}
-    
-    if chat_id not in chat_histories[user_id]:
-        chat_histories[user_id][chat_id] = {
-            'title': 'New Chat',
-            'messages': [
-                {
-                    'role': 'assistant',
-                    'content': '👋 Hello! I\'m your AI assistant. How can I help you today?'
-                }
-            ],
-            'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        }
-    
-    chat_histories[user_id][chat_id]['messages'].append({
-        'role': 'user',
-        'content': message
-    })
-    
-    if chat_histories[user_id][chat_id]['title'] == 'New Chat' and len(message) > 0:
-        title = message[:30] + ('...' if len(message) > 30 else '')
-        chat_histories[user_id][chat_id]['title'] = title
-    
-    save_chat_histories()
-    
-    model_info = MODELS.get(model_key)
-    
-    if not model_info:
-        return jsonify({'error': 'Invalid model selection', 'done': True})
-    
+def load_chat_histories():
+    global chat_histories
     try:
-        
-        if model_info['provider'] == 'openai':
-            if model_info.get('stream', True):
-                return stream_openai_response(message, model_info['name'], user_id, chat_id, 
-                                            history_limit=MESSAGE_HISTORY_LIMIT)
-            else:
-                
-                try:
-                    response_content = send_request_to_openai_no_stream(message, model_info['name'], user_id, chat_id,
-                                                              history_limit=MESSAGE_HISTORY_LIMIT)
-                    
-                    return jsonify({
-                        'response': response_content,
-                        'done': True
-                    })
-                except Exception as e:
-                    print(f"Error in non-streaming OpenAI request: {str(e)}")
-                    error_msg = f"Sorry, there was an error: {str(e)}"
-                    
-                    if chat_histories[user_id][chat_id]['messages'][-1]['role'] != 'assistant':
-                        chat_histories[user_id][chat_id]['messages'].append({
-                            'role': 'assistant',
-                            'content': error_msg
-                        })
-                        save_chat_histories()
-                    return jsonify({'error': error_msg, 'done': True})
-                    
-        else:
-            if model_info.get('stream', True):
-                return stream_anthropic_response(message, model_info['name'], user_id, chat_id,
-                                               history_limit=MESSAGE_HISTORY_LIMIT)
-            else:
-                response = send_request_to_anthropic(message, model_info['name'], user_id, chat_id,
-                                                   history_limit=MESSAGE_HISTORY_LIMIT)
-                return jsonify({'response': response, 'done': True})
-    
+        if os.path.exists(CHAT_HISTORY_FILE):
+            with open(CHAT_HISTORY_FILE, 'r') as f:
+                chat_histories = json.load(f)
     except Exception as e:
-        error_msg = f"Sorry, there was an error processing your request: {str(e)}"
-        print(f"General error in chat route: {str(e)}")
+        print(f"Error loading chat histories: {str(e)}")
+        chat_histories = {}
+
+
+def save_chat_histories():
+    try:
+        directory = os.path.dirname(CHAT_HISTORY_FILE)
+        if directory and not os.path.exists(directory):
+            os.makedirs(directory)
+            
+        serializable_histories = json.dumps(chat_histories, default=str, indent=2)
         
-        if chat_histories[user_id][chat_id]['messages'][-1]['role'] != 'assistant':
-            chat_histories[user_id][chat_id]['messages'].append({
-                'role': 'assistant',
-                'content': error_msg
-            })
-            save_chat_histories()
-        return jsonify({'error': error_msg, 'done': True})
+        with open(CHAT_HISTORY_FILE, 'w') as f:
+            f.write(serializable_histories)
+    except Exception as e:
+        print(f"Error saving chat histories: {str(e)}")
+        import traceback
+        traceback.print_exc()
 
-@app.route('/chat/history/<chat_id>', methods=['GET'])
-def get_chat_history(chat_id):
-    if 'user_id' not in session:
-        return jsonify({'error': 'No session found'}), 401
-    
-    user_id = session['user_id']
-    
-    if user_id not in chat_histories or chat_id not in chat_histories[user_id]:
-        return jsonify({'error': 'Chat not found'}), 404
-    
-    return jsonify({
-        'status': 'success',
-        'chat': chat_histories[user_id][chat_id]
-    })
-
-@app.route('/chat/update/<chat_id>', methods=['POST'])
-def update_chat_title(chat_id):
-    if 'user_id' not in session:
-        return jsonify({'error': 'No session found'}), 401
-    
-    user_id = session['user_id']
-    data = request.json
-    new_title = data.get('title', 'Untitled Chat')
-    
-    if user_id not in chat_histories or chat_id not in chat_histories[user_id]:
-        return jsonify({'error': 'Chat not found'}), 404
-    
-    chat_histories[user_id][chat_id]['title'] = new_title
-    
-    save_chat_histories()
-    
-    return jsonify({
-        'status': 'success',
-        'chat_id': chat_id
-    })
-
-@app.route('/chat/rename/<chat_id>', methods=['POST'])
-def rename_chat(chat_id):
-    
-    if 'user_id' not in session:
-        return jsonify({'error': 'No session found'}), 401
-    
-    user_id = session['user_id']
-    data = request.json
-    new_title = data.get('title', 'Untitled Chat')
-    
-    if user_id not in chat_histories or chat_id not in chat_histories[user_id]:
-        return jsonify({'error': 'Chat not found'}), 404
-    
-    chat_histories[user_id][chat_id]['title'] = new_title
-    
-    save_chat_histories()
-    
-    return jsonify({
-        'status': 'success',
-        'chat_id': chat_id,
-        'title': new_title
-    })
-
-@app.route('/chat/delete/<chat_id>', methods=['POST'])
-def delete_chat(chat_id):
-    if 'user_id' not in session:
-        return jsonify({'error': 'No session found'}), 401
-    
-    user_id = session['user_id']
-    
-    if user_id not in chat_histories or chat_id not in chat_histories[user_id]:
-        return jsonify({'error': 'Chat not found'}), 404
-    
-    del chat_histories[user_id][chat_id]
-    
-    save_chat_histories()
-    
-    return jsonify({
-        'status': 'success'
-    })
 
 def stream_openai_response(content, model_name, user_id, chat_id, system_prompt=basic_system_prompt, history_limit=5):
     def generate():
         response_saved = False
         try:
             all_messages = chat_histories[user_id][chat_id]['messages']
-            
             limited_messages = get_limited_message_history(all_messages, history_limit)
             
             previous_messages = []
@@ -386,10 +146,10 @@ def stream_openai_response(content, model_name, user_id, chat_id, system_prompt=
     
     return Response(stream_with_context(generate()), content_type='text/event-stream')
 
+
 def send_request_to_openai_no_stream(content, model_name, user_id, chat_id, system_prompt=basic_system_prompt, history_limit=5):
     try:
         all_messages = chat_histories[user_id][chat_id]['messages']
-        
         limited_messages = get_limited_message_history(all_messages, history_limit)
         
         previous_messages = []
@@ -429,6 +189,7 @@ def send_request_to_openai_no_stream(content, model_name, user_id, chat_id, syst
         save_chat_histories()
         raise
 
+
 def stream_anthropic_response(content, model_name, user_id, chat_id, system_prompt=basic_system_prompt, history_limit=5):
     def generate():
         response_saved = False
@@ -436,7 +197,6 @@ def stream_anthropic_response(content, model_name, user_id, chat_id, system_prom
         
         try:
             all_messages = chat_histories[user_id][chat_id]['messages']
-            
             limited_messages = get_limited_message_history(all_messages, history_limit)
             
             previous_messages = []
@@ -484,10 +244,10 @@ def stream_anthropic_response(content, model_name, user_id, chat_id, system_prom
     
     return Response(stream_with_context(generate()), content_type='text/event-stream')
 
+
 def send_request_to_anthropic(content, model_name, user_id, chat_id, system_prompt=basic_system_prompt, history_limit=5):
     try:
         all_messages = chat_histories[user_id][chat_id]['messages']
-        
         limited_messages = get_limited_message_history(all_messages, history_limit)
         
         previous_messages = []
@@ -522,6 +282,246 @@ def send_request_to_anthropic(content, model_name, user_id, chat_id, system_prom
     except Exception as e:
         print(f"Error in Anthropic request: {str(e)}")
         raise
+
+
+@app.route('/')
+def index():
+    if 'user_id' not in session:
+        session['user_id'] = str(uuid.uuid4())
+    
+    user_id = session['user_id']
+    
+    if user_id not in chat_histories:
+        chat_histories[user_id] = {
+            'default': {
+                'title': 'New Chat',
+                'messages': [
+                    {
+                        'role': 'assistant',
+                        'content': '👋 Hello! I\'m your AI assistant. How can I help you today?'
+                    }
+                ],
+                'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            }
+        }
+        save_chat_histories()
+    
+    user_chats = chat_histories[user_id]
+    
+    return render_template('index.html', models=MODELS, chats=user_chats)
+
+
+@app.route('/chat/new', methods=['GET', 'POST'])
+def new_chat():
+    if 'user_id' not in session:
+        session['user_id'] = str(uuid.uuid4())
+    
+    user_id = session['user_id']
+    chat_id = str(uuid.uuid4())
+    
+    if user_id not in chat_histories:
+        chat_histories[user_id] = {}
+    
+    chat_histories[user_id][chat_id] = {
+        'title': 'New Chat',
+        'messages': [
+            {
+                'role': 'assistant',
+                'content': '👋 Hello! I\'m your AI assistant. How can I help you today?'
+            }
+        ],
+        'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    }
+    
+    save_chat_histories()
+    
+    if request.method == 'POST':
+        return jsonify({
+            'status': 'success',
+            'chat_id': chat_id,
+            'chat': chat_histories[user_id][chat_id]
+        })
+    
+    return redirect('/')
+
+
+@app.route('/chat', methods=['POST', 'GET'])
+def chat():
+    if 'user_id' not in session:
+        session['user_id'] = str(uuid.uuid4())
+    
+    user_id = session['user_id']
+    
+    if request.method == 'GET':
+        message = request.args.get('message', '')
+        model_key = request.args.get('model', 'gpt-4o')
+        chat_id = request.args.get('chat_id', 'default')
+    else:
+        data = request.json
+        message = data.get('message', '')
+        model_key = data.get('model', 'gpt-4o')
+        chat_id = data.get('chat_id', 'default')
+    
+    if user_id not in chat_histories:
+        chat_histories[user_id] = {}
+    
+    if chat_id not in chat_histories[user_id]:
+        chat_histories[user_id][chat_id] = {
+            'title': 'New Chat',
+            'messages': [
+                {
+                    'role': 'assistant',
+                    'content': '👋 Hello! I\'m your AI assistant. How can I help you today?'
+                }
+            ],
+            'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        }
+    
+    chat_histories[user_id][chat_id]['messages'].append({
+        'role': 'user',
+        'content': message
+    })
+    
+    if chat_histories[user_id][chat_id]['title'] == 'New Chat' and len(message) > 0:
+        title = message[:30] + ('...' if len(message) > 30 else '')
+        chat_histories[user_id][chat_id]['title'] = title
+    
+    save_chat_histories()
+    
+    model_info = MODELS.get(model_key)
+    
+    if not model_info:
+        return jsonify({'error': 'Invalid model selection', 'done': True})
+    
+    try:
+        if model_info['provider'] == 'openai':
+            if model_info.get('stream', True):
+                return stream_openai_response(message, model_info['name'], user_id, chat_id, 
+                                            history_limit=MESSAGE_HISTORY_LIMIT)
+            else:
+                try:
+                    response_content = send_request_to_openai_no_stream(message, model_info['name'], user_id, chat_id,
+                                                              history_limit=MESSAGE_HISTORY_LIMIT)
+                    
+                    return jsonify({
+                        'response': response_content,
+                        'done': True
+                    })
+                except Exception as e:
+                    print(f"Error in non-streaming OpenAI request: {str(e)}")
+                    error_msg = f"Sorry, there was an error: {str(e)}"
+                    
+                    if chat_histories[user_id][chat_id]['messages'][-1]['role'] != 'assistant':
+                        chat_histories[user_id][chat_id]['messages'].append({
+                            'role': 'assistant',
+                            'content': error_msg
+                        })
+                        save_chat_histories()
+                    return jsonify({'error': error_msg, 'done': True})
+                    
+        else:
+            if model_info.get('stream', True):
+                return stream_anthropic_response(message, model_info['name'], user_id, chat_id,
+                                               history_limit=MESSAGE_HISTORY_LIMIT)
+            else:
+                response = send_request_to_anthropic(message, model_info['name'], user_id, chat_id,
+                                                   history_limit=MESSAGE_HISTORY_LIMIT)
+                return jsonify({'response': response, 'done': True})
+    
+    except Exception as e:
+        error_msg = f"Sorry, there was an error processing your request: {str(e)}"
+        print(f"General error in chat route: {str(e)}")
+        
+        if chat_histories[user_id][chat_id]['messages'][-1]['role'] != 'assistant':
+            chat_histories[user_id][chat_id]['messages'].append({
+                'role': 'assistant',
+                'content': error_msg
+            })
+            save_chat_histories()
+        return jsonify({'error': error_msg, 'done': True})
+
+
+@app.route('/chat/history/<chat_id>', methods=['GET'])
+def get_chat_history(chat_id):
+    if 'user_id' not in session:
+        return jsonify({'error': 'No session found'}), 401
+    
+    user_id = session['user_id']
+    
+    if user_id not in chat_histories or chat_id not in chat_histories[user_id]:
+        return jsonify({'error': 'Chat not found'}), 404
+    
+    return jsonify({
+        'status': 'success',
+        'chat': chat_histories[user_id][chat_id]
+    })
+
+
+@app.route('/chat/update/<chat_id>', methods=['POST'])
+def update_chat_title(chat_id):
+    if 'user_id' not in session:
+        return jsonify({'error': 'No session found'}), 401
+    
+    user_id = session['user_id']
+    data = request.json
+    new_title = data.get('title', 'Untitled Chat')
+    
+    if user_id not in chat_histories or chat_id not in chat_histories[user_id]:
+        return jsonify({'error': 'Chat not found'}), 404
+    
+    chat_histories[user_id][chat_id]['title'] = new_title
+    
+    save_chat_histories()
+    
+    return jsonify({
+        'status': 'success',
+        'chat_id': chat_id
+    })
+
+
+@app.route('/chat/rename/<chat_id>', methods=['POST'])
+def rename_chat(chat_id):
+    if 'user_id' not in session:
+        return jsonify({'error': 'No session found'}), 401
+    
+    user_id = session['user_id']
+    data = request.json
+    new_title = data.get('title', 'Untitled Chat')
+    
+    if user_id not in chat_histories or chat_id not in chat_histories[user_id]:
+        return jsonify({'error': 'Chat not found'}), 404
+    
+    chat_histories[user_id][chat_id]['title'] = new_title
+    
+    save_chat_histories()
+    
+    return jsonify({
+        'status': 'success',
+        'chat_id': chat_id,
+        'title': new_title
+    })
+
+
+@app.route('/chat/delete/<chat_id>', methods=['POST'])
+def delete_chat(chat_id):
+    if 'user_id' not in session:
+        return jsonify({'error': 'No session found'}), 401
+    
+    user_id = session['user_id']
+    
+    if user_id not in chat_histories or chat_id not in chat_histories[user_id]:
+        return jsonify({'error': 'Chat not found'}), 404
+    
+    del chat_histories[user_id][chat_id]
+    
+    save_chat_histories()
+    
+    return jsonify({
+        'status': 'success'
+    })
+
+
+load_chat_histories()
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=3000)
