@@ -1,5 +1,5 @@
 
-from flask import Flask, render_template, request, jsonify, Response, stream_with_context, session
+from flask import Flask, render_template, request, jsonify, Response, stream_with_context, session, redirect
 import os
 import openai
 from anthropic import Anthropic  
@@ -78,6 +78,45 @@ MODELS = {
     'claude-3-5-sonnet': {'provider': 'anthropic', 'name': 'claude-3-5-sonnet-20240620', 'stream': True},
     'claude-3-7-sonnet': {'provider': 'anthropic', 'name': 'claude-3-7-sonnet-20250219', 'stream': True},
 }
+
+
+@app.route('/chat/new', methods=['GET', 'POST'])
+def new_chat():
+    if 'user_id' not in session:
+        session['user_id'] = str(uuid.uuid4())
+    
+    user_id = session['user_id']
+    
+    # Generate a new chat ID
+    chat_id = str(uuid.uuid4())
+    
+    # Initialize the new chat with default message
+    chat_histories[user_id][chat_id] = {
+        'title': 'New Chat',
+        'messages': [
+            {
+                'role': 'assistant',
+                'content': '👋 Hello! I\'m your AI assistant. How can I help you today?'
+            }
+        ],
+        'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    }
+    
+    # Save the updated chat histories
+    save_chat_histories()
+    
+    # For POST requests, return JSON
+    if request.method == 'POST':
+        return jsonify({
+            'status': 'success',
+            'chat_id': chat_id,
+            'chat': chat_histories[user_id][chat_id]
+        })
+    
+    # For GET requests, redirect to the main page
+    return redirect('/')
+
+
 
 @app.route('/')
 def index():
