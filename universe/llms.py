@@ -28,3 +28,11 @@ for item in os.getenv("UNIVERSE_EXTRA_MODELS", "").split(","):
         MODELS[name] = (provider, name)
 
 
+def list_models():
+    out = []
+    for key, (provider, _) in MODELS.items():
+        out.append({"key": key, "provider": provider})
+    return out
+
+
+@lru_cache(maxsize=32)
