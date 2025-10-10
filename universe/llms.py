@@ -36,3 +36,24 @@ def list_models():
 
 
 @lru_cache(maxsize=32)
+def get_llm(model_key, temperature=0.7):
+    if model_key not in MODELS:
+        raise ValueError(f"Unknown model: {model_key}")
+
+    provider, name = MODELS[model_key]
+
+    if provider == "openai":
+        # reasoning models (o-series, gpt-5) don't accept temperature
+        if name.startswith("o") or name.startswith("gpt-5"):
+            return ChatOpenAI(model=name, api_key=config.OPENAI_API_KEY)
+        return ChatOpenAI(model=name, temperature=temperature, api_key=config.OPENAI_API_KEY)
+
+    if provider == "anthropic":
+        return ChatAnthropic(
+            model=name,
+            temperature=temperature,
+            max_tokens=4096,
+            api_key=config.ANTHROPIC_API_KEY,
+        )
+
+    raise ValueError(f"Provider {provider} is not supported yet")
