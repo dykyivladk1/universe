@@ -45,3 +45,9 @@ def calculator(expression: str) -> str:
 
 
 @tool
+def current_datetime() -> str:
+    """Get the current local date and time."""
+    return datetime.now().strftime("%A, %Y-%m-%d %H:%M")
+
+
+@tool
