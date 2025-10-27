@@ -51,3 +51,28 @@ def current_datetime() -> str:
 
 
 @tool
+def fetch_url(url: str) -> str:
+    """Download a web page and return its text (first ~6000 chars). Use when the user gives a link."""
+    if not url.startswith(("http://", "https://")):
+        return "URL must start with http:// or https://"
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (Universe agent)"})
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            html = resp.read().decode("utf-8", errors="ignore")
+    except Exception as e:
+        return f"Failed to fetch {url}: {e}"
+
+    # quick and dirty html -> text, good enough for the model
+    html = re.sub(r"(?is)<(script|style).*?</\1>", " ", html)
+    text = re.sub(r"<[^>]+>", " ", html)
+    text = re.sub(r"\s+", " ", text).strip()
+    return text[:6000]
+
+
+TOOLS = {
+    "calculator": calculator,
+    "current_datetime": current_datetime,
+    "fetch_url": fetch_url,
+}
+
+
