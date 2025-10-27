@@ -34,3 +34,14 @@ def _eval(node):
 
 
 @tool
+def calculator(expression: str) -> str:
+    """Evaluate a math expression like '12 * (3 + 4) / 2'. Use it for any arithmetic."""
+    try:
+        # not using eval() on purpose, the model could send anything here
+        result = _eval(ast.parse(expression, mode="eval").body)
+        return str(result)
+    except Exception as e:
+        return f"Could not calculate: {e}"
+
+
+@tool
