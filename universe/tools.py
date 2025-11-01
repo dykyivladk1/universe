@@ -76,3 +76,7 @@ TOOLS = {
 }
 
 
+def list_tools():
+    return [{"name": name, "description": t.description} for name, t in TOOLS.items()]
+
+
