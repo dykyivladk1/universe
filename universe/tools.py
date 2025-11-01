@@ -80,3 +80,6 @@ def list_tools():
     return [{"name": name, "description": t.description} for name, t in TOOLS.items()]
 
 
+def get_tools(names):
+    # silently skip unknown names, happens when a tool gets removed but agents.json still has it
+    return [TOOLS[n] for n in names if n in TOOLS]
