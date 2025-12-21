@@ -19,3 +19,11 @@ def _read_json(path, default):
         return default
 
 
+def _write_json(path, data):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(".tmp")
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2, ensure_ascii=False, default=str)
+    tmp.replace(path)  # so we never end up with half-written file
+
+
