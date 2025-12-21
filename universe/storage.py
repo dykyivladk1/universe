@@ -27,3 +27,7 @@ def _write_json(path, data):
     tmp.replace(path)  # so we never end up with half-written file
 
 
+def now():
+    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+
