@@ -166,3 +166,38 @@ class AgentStore:
 # same shape as the old history/chat_histories.json:
 # { user_id: { chat_id: {title, messages: [{role, content}], created_at} } }
 
+class ChatStore:
+    def __init__(self, path=None):
+        self.path = path or config.CHATS_FILE
+        self.data = _read_json(self.path, {})
+
+    def save(self):
+        with _lock:
+            _write_json(self.path, self.data)
+
+    def get_chat(self, user_id, chat_id, create=True):
+        user_chats = self.data.setdefault(user_id, {})
+        if chat_id not in user_chats and create:
+            user_chats[chat_id] = {"title": "Chat", "messages": [], "created_at": now()}
+        return user_chats.get(chat_id)
+
+    def add_message(self, user_id, chat_id, role, content, agent=None):
+        chat = self.get_chat(user_id, chat_id)
+        msg = {"role": role, "content": content}
+        if agent:
+            msg["agent"] = agent
+        chat["messages"].append(msg)
+
+        if chat["title"] == "Chat" and role == "user" and content:
+            chat["title"] = content[:30] + ("..." if len(content) > 30 else "")
+        self.save()
+
+    def clear(self, user_id, chat_id):
+        chat = self.get_chat(user_id, chat_id, create=False)
+        if chat:
+            chat["messages"] = []
+            self.save()
+
+    def delete(self, user_id, chat_id):
+        self.data.get(user_id, {}).pop(chat_id, None)
+        self.save()
