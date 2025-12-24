@@ -77,3 +77,92 @@ def _default_agents():
     }
 
 
+class AgentStore:
+    def __init__(self, path=None):
+        self.path = path or config.AGENTS_FILE
+        self.data = _read_json(self.path, None)
+        if not self.data:
+            self.data = _default_agents()
+            self.save()
+
+    def save(self):
+        with _lock:
+            _write_json(self.path, self.data)
+
+    def _unique_id(self, bucket, name):
+        base = slugify(name)
+        new_id, i = base, 2
+        # "supervisor" is taken by the team graph node
+        while new_id in self.data[bucket] or new_id == "supervisor":
+            new_id = f"{base}-{i}"
+            i += 1
+        return new_id
+
+    # agents
+    def agents(self):
+        return self.data["agents"]
+
+    def get_agent(self, agent_id):
+        return self.data["agents"].get(agent_id)
+
+    def save_agent(self, payload, agent_id=None):
+        agent_id = agent_id or self._unique_id("agents", payload["name"])
+        old = self.data["agents"].get(agent_id, {})
+        self.data["agents"][agent_id] = {
+            "name": payload["name"],
+            "description": payload.get("description", ""),
+            "model": payload["model"],
+            "temperature": float(payload.get("temperature", 0.7)),
+            "system_prompt": payload.get("system_prompt", ""),
+            "tools": payload.get("tools", []),
+            "created_at": old.get("created_at", now()),
+            "updated_at": now(),
+        }
+        self.save()
+        return agent_id
+
+    def duplicate_agent(self, agent_id):
+        agent = self.get_agent(agent_id)
+        if not agent:
+            return None
+        copy = dict(agent, name=agent["name"] + " (copy)")
+        return self.save_agent(copy)
+
+    def delete_agent(self, agent_id):
+        self.data["agents"].pop(agent_id, None)
+        # also kick it out of any team it was in
+        for team in self.data["teams"].values():
+            if agent_id in team["members"]:
+                team["members"].remove(agent_id)
+        self.save()
+
+    # teams
+    def teams(self):
+        return self.data["teams"]
+
+    def get_team(self, team_id):
+        return self.data["teams"].get(team_id)
+
+    def save_team(self, payload, team_id=None):
+        team_id = team_id or self._unique_id("teams", payload["name"])
+        old = self.data["teams"].get(team_id, {})
+        self.data["teams"][team_id] = {
+            "name": payload["name"],
+            "description": payload.get("description", ""),
+            "router_model": payload["router_model"],
+            "members": payload["members"],
+            "created_at": old.get("created_at", now()),
+            "updated_at": now(),
+        }
+        self.save()
+        return team_id
+
+    def delete_team(self, team_id):
+        self.data["teams"].pop(team_id, None)
+        self.save()
+
+
+# ---------------- chat history ----------------
+# same shape as the old history/chat_histories.json:
+# { user_id: { chat_id: {title, messages: [{role, content}], created_at} } }
+
