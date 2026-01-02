@@ -26,3 +26,14 @@ def build_agent(agent_id, spec):
     return agent
 
 
+def to_lc_messages(history):
+    """Our json history -> langchain messages."""
+    out = []
+    for msg in history:
+        if not msg.get("content"):
+            continue
+        if msg["role"] == "user":
+            out.append(HumanMessage(msg["content"]))
+        else:
+            out.append(AIMessage(msg["content"], name=msg.get("agent")))
+    return out
