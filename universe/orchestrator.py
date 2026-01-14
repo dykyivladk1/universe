@@ -35,3 +35,10 @@ class TeamState(MessagesState):
     steps: int
 
 
+def _describe(agent_id, spec):
+    # first line of the prompt is usually enough for routing
+    first_line = (spec.get("system_prompt") or "").strip().split("\n")[0][:200]
+    tools = ", ".join(spec.get("tools", [])) or "no tools"
+    return f"- {agent_id} ({spec['name']}): {first_line} [{tools}]"
+
+
