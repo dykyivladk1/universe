@@ -30,3 +30,8 @@ Rules:
 - When in doubt, FINISH. The user can always ask a follow-up."""
 
 
+class TeamState(MessagesState):
+    next: str
+    steps: int
+
+
