@@ -11,3 +11,12 @@ from universe.agents import build_agent, to_lc_messages
 from universe.orchestrator import build_team
 
 
+def _chunk_text(chunk):
+    # anthropic sends content as list of blocks, openai as a string.
+    # .text handles both
+    try:
+        return chunk.text
+    except Exception:
+        return chunk.content if isinstance(chunk.content, str) else ""
+
+
