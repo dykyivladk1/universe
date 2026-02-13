@@ -50,3 +50,16 @@ def _stream_graph(graph, inputs, names):
                 yield {"type": "token", "text": text}
 
 
+def run(kind, target_id, spec, history, message, agent_specs=None):
+    """kind is 'agent' or 'team'. history is our json list, without the new message."""
+    messages = to_lc_messages(history) + [HumanMessage(message)]
+
+    if kind == "agent":
+        graph = build_agent(target_id, spec)
+        yield {"type": "agent", "agent": target_id, "name": spec["name"]}
+        yield from _stream_graph(graph, {"messages": messages}, {target_id: spec["name"]})
+        return
+
+    graph = build_team(spec, agent_specs)
+    names = {a: s["name"] for a, s in agent_specs.items()}
+    yield from _stream_graph(graph, {"messages": messages, "steps": 0}, names)
