@@ -80,3 +80,8 @@ PRESETS = [
 ]
 
 
+def get_preset(key):
+    for p in PRESETS:
+        if p["key"] == key:
+            return p
+    return PRESETS[0]
