@@ -20,3 +20,9 @@ agent_store = AgentStore()
 chat_store = ChatStore()
 
 
+def current_user():
+    if "user_id" not in session:
+        session["user_id"] = str(uuid.uuid4())
+    return session["user_id"]
+
+
