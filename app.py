@@ -37,3 +37,8 @@ def avatar_color(agent_id):
 
 
 @app.template_filter("initials")
+def initials(name):
+    return "".join(word[0] for word in name.split()[:2]).upper() or "?"
+
+
+@app.context_processor
