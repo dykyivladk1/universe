@@ -26,3 +26,8 @@ def current_user():
     return session["user_id"]
 
 
+def sse(data):
+    return f"data: {json.dumps(data)}\n\n"
+
+
+@app.template_filter("avatar_color")
