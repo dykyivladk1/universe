@@ -31,3 +31,9 @@ def sse(data):
 
 
 @app.template_filter("avatar_color")
+def avatar_color(agent_id):
+    # same formula as avatarColor() in chat.js, so colors match everywhere
+    return f"av-{sum(ord(c) for c in agent_id) % 8}"
+
+
+@app.template_filter("initials")
