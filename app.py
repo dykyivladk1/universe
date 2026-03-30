@@ -58,3 +58,9 @@ def parse_target(target):
 # ---------------- pages ----------------
 
 @app.route("/")
+def dashboard():
+    current_user()
+    return render_template("dashboard.html", active="dashboard")
+
+
+@app.route("/agents/<agent_id>")
