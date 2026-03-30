@@ -42,3 +42,8 @@ def initials(name):
 
 
 @app.context_processor
+def sidebar_data():
+    # the sidebar is on every page, so just give every template the lists
+    return {"nav_agents": agent_store.agents(), "nav_teams": agent_store.teams()}
+
+
