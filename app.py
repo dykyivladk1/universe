@@ -47,3 +47,14 @@ def sidebar_data():
     return {"nav_agents": agent_store.agents(), "nav_teams": agent_store.teams()}
 
 
+def parse_target(target):
+    """'agent:coder' -> ('agent', 'coder')"""
+    kind, _, target_id = (target or "").partition(":")
+    if kind not in ("agent", "team") or not target_id:
+        return None, None
+    return kind, target_id
+
+
+# ---------------- pages ----------------
+
+@app.route("/")
