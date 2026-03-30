@@ -64,3 +64,10 @@ def dashboard():
 
 
 @app.route("/agents/<agent_id>")
+def agent_builder(agent_id):
+    if not agent_store.get_agent(agent_id):
+        abort(404)
+    return render_template("builder.html", kind="agent", target_id=agent_id, active=f"agent:{agent_id}")
+
+
+@app.route("/teams/<team_id>")
