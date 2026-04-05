@@ -71,3 +71,10 @@ def agent_builder(agent_id):
 
 
 @app.route("/teams/<team_id>")
+def team_builder(team_id):
+    if not agent_store.get_team(team_id):
+        abort(404)
+    return render_template("builder.html", kind="team", target_id=team_id, active=f"team:{team_id}")
+
+
+@app.route("/c/<path:target>")
