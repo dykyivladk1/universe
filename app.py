@@ -78,3 +78,13 @@ def team_builder(team_id):
 
 
 @app.route("/c/<path:target>")
+def chat_page(target):
+    kind, target_id = parse_target(target)
+    if not kind:
+        return redirect(url_for("dashboard"))
+    return render_template("chat.html", target=target, active=target)
+
+
+# ---------------- config ----------------
+
+@app.route("/api/config")
