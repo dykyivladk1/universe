@@ -88,3 +88,16 @@ def chat_page(target):
 # ---------------- config ----------------
 
 @app.route("/api/config")
+def get_config():
+    return jsonify({
+        "models": list_models(),
+        "tools": list_tools(),
+        "presets": PRESETS,
+        "agents": agent_store.agents(),
+        "teams": agent_store.teams(),
+        "history_limit": config.HISTORY_LIMIT,
+    })
+
+
+# ---------------- agents ----------------
+
