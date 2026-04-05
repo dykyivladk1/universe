@@ -101,3 +101,22 @@ def get_config():
 
 # ---------------- agents ----------------
 
+def validate_agent(data):
+    if not data.get("name", "").strip():
+        return "Name is required"
+    if data.get("model") not in MODELS:
+        return "Unknown model"
+    try:
+        temp = float(data.get("temperature", 0.7))
+    except (TypeError, ValueError):
+        return "Temperature must be a number"
+    if not 0 <= temp <= 2:
+        return "Temperature must be between 0 and 2"
+    bad_tools = [t for t in data.get("tools", []) if t not in TOOLS]
+    if bad_tools:
+        return f"Unknown tools: {', '.join(bad_tools)}"
+    return None
+
+
+@app.route("/api/agents", methods=["POST"])
+@app.route("/api/agents/<agent_id>", methods=["PUT"])
