@@ -149,3 +149,12 @@ def duplicate_agent(agent_id):
 
 
 @app.route("/api/agents/<agent_id>", methods=["DELETE"])
+def delete_agent(agent_id):
+    agent_store.delete_agent(agent_id)
+    return jsonify({"status": "ok"})
+
+
+# ---------------- teams ----------------
+
+@app.route("/api/teams", methods=["POST"])
+@app.route("/api/teams/<team_id>", methods=["PUT"])
