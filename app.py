@@ -141,3 +141,11 @@ def save_agent(agent_id=None):
 
 
 @app.route("/api/agents/<agent_id>/duplicate", methods=["POST"])
+def duplicate_agent(agent_id):
+    new_id = agent_store.duplicate_agent(agent_id)
+    if not new_id:
+        return jsonify({"error": "Agent not found"}), 404
+    return jsonify({"status": "ok", "id": new_id})
+
+
+@app.route("/api/agents/<agent_id>", methods=["DELETE"])
