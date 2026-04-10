@@ -120,3 +120,24 @@ def validate_agent(data):
 
 @app.route("/api/agents", methods=["POST"])
 @app.route("/api/agents/<agent_id>", methods=["PUT"])
+def save_agent(agent_id=None):
+    data = request.get_json() or {}
+
+    # creating from a preset: {"preset": "coder"} is enough
+    if not agent_id and "preset" in data:
+        preset = get_preset(data["preset"])
+        data = {**preset, **{k: v for k, v in data.items() if k != "preset"}}
+        if preset["key"] == "blank":
+            data["name"] = data.get("name") or "New agent"
+
+    error = validate_agent(data)
+    if error:
+        return jsonify({"error": error}), 400
+    if agent_id and not agent_store.get_agent(agent_id):
+        return jsonify({"error": "Agent not found"}), 404
+
+    agent_id = agent_store.save_agent(data, agent_id)
+    return jsonify({"status": "ok", "id": agent_id, "agent": agent_store.get_agent(agent_id)})
+
+
+@app.route("/api/agents/<agent_id>/duplicate", methods=["POST"])
