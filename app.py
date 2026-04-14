@@ -175,3 +175,11 @@ def save_team(team_id=None):
 
 
 @app.route("/api/teams/<team_id>", methods=["DELETE"])
+def delete_team(team_id):
+    agent_store.delete_team(team_id)
+    return jsonify({"status": "ok"})
+
+
+# ---------------- chat ----------------
+
+@app.route("/chat")
