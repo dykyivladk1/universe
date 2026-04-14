@@ -158,3 +158,20 @@ def delete_agent(agent_id):
 
 @app.route("/api/teams", methods=["POST"])
 @app.route("/api/teams/<team_id>", methods=["PUT"])
+def save_team(team_id=None):
+    data = request.get_json() or {}
+    if not data.get("name", "").strip():
+        return jsonify({"error": "Name is required"}), 400
+    if data.get("router_model") not in MODELS:
+        return jsonify({"error": "Unknown router model"}), 400
+
+    members = [m for m in data.get("members", []) if agent_store.get_agent(m)]
+    if len(members) < 2:
+        return jsonify({"error": "A team needs at least 2 agents"}), 400
+    data["members"] = members
+
+    team_id = agent_store.save_team(data, team_id)
+    return jsonify({"status": "ok", "id": team_id, "team": agent_store.get_team(team_id)})
+
+
+@app.route("/api/teams/<team_id>", methods=["DELETE"])
