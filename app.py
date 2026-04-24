@@ -241,3 +241,11 @@ def chat():
 
 
 @app.route("/chat/history/<path:chat_id>")
+def chat_history(chat_id):
+    chat = chat_store.get_chat(current_user(), chat_id, create=False)
+    if not chat:
+        return jsonify({"status": "success", "chat": {"title": "Chat", "messages": []}})
+    return jsonify({"status": "success", "chat": chat})
+
+
+@app.route("/chat/clear/<path:chat_id>", methods=["POST"])
