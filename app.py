@@ -249,3 +249,9 @@ def chat_history(chat_id):
 
 
 @app.route("/chat/clear/<path:chat_id>", methods=["POST"])
+def clear_chat(chat_id):
+    chat_store.clear(current_user(), chat_id)
+    return jsonify({"status": "success"})
+
+
+@app.route("/chat/delete/<path:chat_id>", methods=["POST"])
