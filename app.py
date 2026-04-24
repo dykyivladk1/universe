@@ -183,3 +183,61 @@ def delete_team(team_id):
 # ---------------- chat ----------------
 
 @app.route("/chat")
+def chat():
+    user_id = current_user()
+    message = request.args.get("message", "").strip()
+    target = request.args.get("target", "")
+    kind, target_id = parse_target(target)
+
+    if not message:
+        return jsonify({"error": "Empty message"}), 400
+
+    if kind == "agent":
+        spec = agent_store.get_agent(target_id)
+        member_specs = None
+    elif kind == "team":
+        spec = agent_store.get_team(target_id)
+        member_specs = {a: agent_store.get_agent(a) for a in (spec or {}).get("members", [])}
+        member_specs = {a: s for a, s in member_specs.items() if s}
+    else:
+        spec = None
+
+    if not spec:
+        return jsonify({"error": f"Nothing found for {target}"}), 404
+
+    # normal chat uses the target as thread id, the builder playground
+    # sends thread=playground:... so testing doesn't mess up the real history
+    chat_id = request.args.get("thread") or target
+    history = chat_store.get_chat(user_id, chat_id)["messages"][-config.HISTORY_LIMIT:]
+    chat_store.add_message(user_id, chat_id, "user", message)
+
+    def generate():
+        # one entry per agent turn, so team answers are saved as separate bubbles
+        turns = []
+        try:
+            for event in runner.run(kind, target_id, spec, history, message, member_specs):
+                if event["type"] == "agent":
+                    turns.append({"agent": event["agent"], "text": ""})
+                elif event["type"] == "token":
+                    if not turns:
+                        turns.append({"agent": None, "text": ""})
+                    turns[-1]["text"] += event["text"]
+                yield sse({**event, "done": False})
+
+            yield sse({"type": "done", "done": True})
+
+        except Exception as e:
+            print(f"[ERROR] {target}: {e}")
+            yield sse({"type": "error", "error": str(e), "done": True})
+
+        finally:
+            # runs also when the user hits stop and the connection drops,
+            # so whatever was generated so far is still saved
+            for turn in turns:
+                if turn["text"].strip():
+                    chat_store.add_message(user_id, chat_id, "assistant", turn["text"], agent=turn["agent"])
+
+    return Response(stream_with_context(generate()), content_type="text/event-stream")
+
+
+@app.route("/chat/history/<path:chat_id>")
