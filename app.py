@@ -255,3 +255,12 @@ def clear_chat(chat_id):
 
 
 @app.route("/chat/delete/<path:chat_id>", methods=["POST"])
+def delete_chat(chat_id):
+    chat_store.delete(current_user(), chat_id)
+    return jsonify({"status": "success"})
+
+
+if __name__ == "__main__":
+    if not config.OPENAI_API_KEY and not config.ANTHROPIC_API_KEY:
+        print("[WARN] no API keys found, check your .env file")
+    app.run(debug=True, host="127.0.0.1", port=config.PORT, threaded=True)
