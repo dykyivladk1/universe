@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}Universe{% endblock %}</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" rel="stylesheet" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link href="{{ url_for('static', filename='css/universe.css') }}" rel="stylesheet" />
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <a class="logo" href="/"><span class="logo-mark"></span>UNIVERSE</a>
+
+      <a class="nav-link {{ 'active' if active == 'dashboard' }}" href="/">
+        <i class="fas fa-table-cells-large"></i><span class="name">Dashboard</span>
+      </a>
+
+      <div class="nav-section">
+        Agents
+        <a href="/?new=agent" title="New agent"><i class="fas fa-plus"></i></a>
+      </div>
+      {% for id, agent in nav_agents.items() %}
+      <a class="nav-link {{ 'active' if active == 'agent:' ~ id }}" href="/c/agent:{{ id }}" title="{{ agent.name }}">
+        <span class="avatar sm {{ id | avatar_color }}">{{ agent.name | initials }}</span>
+        <span class="name">{{ agent.name }}</span>
+      </a>
+      {% endfor %}
+
+      <div class="nav-section">
+        Teams
+        <a href="/?new=team" title="New team"><i class="fas fa-plus"></i></a>
+      </div>
+      {% for id, team in nav_teams.items() %}
+      <a class="nav-link {{ 'active' if active == 'team:' ~ id }}" href="/c/team:{{ id }}" title="{{ team.name }}">
+        <span class="avatar sm av-team"><i class="fas fa-users" style="font-size: 0.55rem"></i></span>
+        <span class="name">{{ team.name }}</span>
+      </a>
+      {% else %}
+      <div class="nav-link subdued" style="font-size: 0.8rem">No teams yet</div>
+      {% endfor %}
+
+      <div class="sidebar-footer">
+        <a class="btn btn-primary btn-block" href="/?new=agent"><i class="fas fa-plus"></i>New agent</a>
+      </div>
+    </aside>
+
+    <main class="main">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+
+  {% block modals %}{% endblock %}
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.3.0/marked.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-typescript.min.js"></script>
+  <script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+  {% block scripts %}
