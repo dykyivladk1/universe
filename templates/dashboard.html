@@ -87,3 +87,48 @@
 {% endblock %}
 
 {% block scripts %}
+<script>
+  let CONFIG = null;
+
+  const PRESET_ICONS = {
+    blank: 'fa-plus', coder: 'fa-code', researcher: 'fa-globe', analyst: 'fa-chart-simple',
+    support: 'fa-headset', writer: 'fa-pen-nib',
+  };
+
+  function statCard(icon, value, label) {
+    return `
+      <div class="stat">
+        <div class="icon"><i class="fas ${icon}"></i></div>
+        <div><div class="value">${value}</div><div class="label">${label}</div></div>
+      </div>`;
+  }
+
+  function agentCard(id, a) {
+    const tools = a.tools.length
+      ? a.tools.map(t => `<span class="chip"><i class="fas fa-bolt"></i>${escapeHtml(t)}</span>`).join('')
+      : '<span class="chip">no tools</span>';
+    const desc = a.description
+      ? `<div class="desc">${escapeHtml(a.description)}</div>`
+      : '<div class="desc empty">No description yet.</div>';
+
+    return `
+      <div class="agent-card" data-search="${escapeHtml((a.name + ' ' + (a.description || '') + ' ' + a.model).toLowerCase())}">
+        <div class="menu">
+          <button class="btn btn-ghost btn-icon" data-duplicate="${id}" title="Duplicate"><i class="fas fa-clone"></i></button>
+        </div>
+        <div class="head">
+          ${avatarHtml(id, a.name)}
+          <div>
+            <div class="name">${escapeHtml(a.name)}</div>
+            <div class="model">${escapeHtml(a.model)} · t=${a.temperature ?? 0.7}</div>
+          </div>
+        </div>
+        ${desc}
+        <div class="chips">${tools}</div>
+        <div class="foot">
+          <a class="btn" href="/c/agent:${id}"><i class="fas fa-comment"></i>Chat</a>
+          <a class="btn btn-ghost" href="/agents/${id}"><i class="fas fa-sliders"></i>Build</a>
+        </div>
+      </div>`;
+  }
+
