@@ -159,3 +159,29 @@
       </div>`;
   }
 
+  function render() {
+    const agents = Object.entries(CONFIG.agents);
+    const teams = Object.entries(CONFIG.teams);
+    const usedTools = new Set(agents.flatMap(([, a]) => a.tools));
+
+    document.getElementById('stats').innerHTML =
+      statCard('fa-robot', agents.length, 'agents') +
+      statCard('fa-users', teams.length, 'teams') +
+      statCard('fa-bolt', `${usedTools.size}<span class="subdued" style="font-size: 0.9rem"> / ${CONFIG.tools.length}</span>`, 'tools in use') +
+      statCard('fa-microchip', CONFIG.models.length, 'models available');
+
+    document.getElementById('agentCount').textContent = agents.length;
+    document.getElementById('teamCount').textContent = teams.length;
+
+    document.getElementById('agentGrid').innerHTML =
+      agents.map(([id, a]) => agentCard(id, a)).join('') +
+      `<div class="agent-card new" id="newAgentCard"><div class="plus"><i class="fas fa-plus"></i></div>New agent</div>`;
+
+    document.getElementById('teamGrid').innerHTML =
+      teams.map(([id, t]) => teamCard(id, t)).join('') +
+      `<div class="agent-card new" id="newTeamCard"><div class="plus"><i class="fas fa-users"></i></div>New team</div>`;
+
+    document.getElementById('newAgentCard').onclick = openPresets;
+    document.getElementById('newTeamCard').onclick = openTeamModal;
+  }
+
