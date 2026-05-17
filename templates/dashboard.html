@@ -132,3 +132,30 @@
       </div>`;
   }
 
+  function teamCard(id, t) {
+    const members = t.members.map(m => {
+      const a = CONFIG.agents[m];
+      return `<span class="chip">${escapeHtml(a ? a.name : m)}</span>`;
+    }).join('');
+    const desc = t.description
+      ? `<div class="desc">${escapeHtml(t.description)}</div>`
+      : '<div class="desc empty">No description yet.</div>';
+
+    return `
+      <div class="agent-card" data-search="${escapeHtml((t.name + ' ' + (t.description || '')).toLowerCase())}">
+        <div class="head">
+          ${avatarHtml('team:' + id, t.name)}
+          <div>
+            <div class="name">${escapeHtml(t.name)}</div>
+            <div class="model">${t.members.length} agents · router ${escapeHtml(t.router_model)}</div>
+          </div>
+        </div>
+        ${desc}
+        <div class="chips">${members}</div>
+        <div class="foot">
+          <a class="btn" href="/c/team:${id}"><i class="fas fa-comment"></i>Chat</a>
+          <a class="btn btn-ghost" href="/teams/${id}"><i class="fas fa-sliders"></i>Build</a>
+        </div>
+      </div>`;
+  }
+
