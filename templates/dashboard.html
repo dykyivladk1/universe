@@ -185,3 +185,25 @@
     document.getElementById('newTeamCard').onclick = openTeamModal;
   }
 
+  // ---- new agent ----
+  const presetModal = new bootstrap.Modal(document.getElementById('presetModal'));
+
+  function openPresets() {
+    document.getElementById('presetError').textContent = '';
+    document.getElementById('presetGrid').innerHTML = CONFIG.presets.map(p => {
+      const tools = p.tools.map(t => `<span class="chip"><i class="fas fa-bolt"></i>${escapeHtml(t)}</span>`).join('');
+      return `
+        <div class="col-md-4">
+          <div class="preset" data-preset="${p.key}">
+            <div class="top">
+              <span class="avatar md ${avatarColor(p.key)}"><i class="fas ${PRESET_ICONS[p.key] || 'fa-robot'}"></i></span>
+              <span class="name">${escapeHtml(p.name)}</span>
+            </div>
+            <div class="desc">${escapeHtml(p.description)}</div>
+            <div class="meta"><span class="chip chip-accent">${escapeHtml(p.model)}</span>${tools}</div>
+          </div>
+        </div>`;
+    }).join('');
+    presetModal.show();
+  }
+
