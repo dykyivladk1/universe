@@ -207,3 +207,32 @@
     presetModal.show();
   }
 
+  document.getElementById('presetGrid').addEventListener('click', async e => {
+    const el = e.target.closest('.preset');
+    if (!el) return;
+    try {
+      const data = await api('/api/agents', { method: 'POST', body: { preset: el.dataset.preset } });
+      window.location = '/agents/' + data.id;
+    } catch (err) {
+      document.getElementById('presetError').textContent = err.message;
+    }
+  });
+
+  // ---- new team ----
+  const teamModal = new bootstrap.Modal(document.getElementById('teamModal'));
+
+  function openTeamModal() {
+    document.getElementById('teamError').textContent = '';
+    document.getElementById('teamName').value = '';
+    document.getElementById('teamMembers').innerHTML = Object.entries(CONFIG.agents).map(([id, a]) => `
+      <label class="option">
+        <input class="form-check-input" type="checkbox" value="${id}">
+        ${avatarHtml(id, a.name, 'sm')}
+        <div>
+          <div class="title">${escapeHtml(a.name)}</div>
+          <div class="desc">${escapeHtml(a.description || a.model)}</div>
+        </div>
+      </label>`).join('');
+    teamModal.show();
+  }
+
