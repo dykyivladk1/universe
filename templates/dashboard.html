@@ -236,3 +236,31 @@
     teamModal.show();
   }
 
+  document.getElementById('createTeamBtn').addEventListener('click', async () => {
+    const members = [...document.querySelectorAll('#teamMembers input:checked')].map(i => i.value);
+    try {
+      const data = await api('/api/teams', {
+        method: 'POST',
+        body: {
+          name: document.getElementById('teamName').value.trim(),
+          router_model: 'gpt-4.1-mini',
+          members,
+        },
+      });
+      window.location = '/teams/' + data.id;
+    } catch (err) {
+      document.getElementById('teamError').textContent = err.message;
+    }
+  });
+
+  // ---- misc ----
+  document.getElementById('newAgentBtn').onclick = openPresets;
+  document.getElementById('newTeamBtn').onclick = openTeamModal;
+
+  document.addEventListener('click', async e => {
+    const btn = e.target.closest('[data-duplicate]');
+    if (!btn) return;
+    const data = await api(`/api/agents/${btn.dataset.duplicate}/duplicate`, { method: 'POST' });
+    window.location = '/agents/' + data.id;
+  });
+
