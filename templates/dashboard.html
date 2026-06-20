@@ -264,3 +264,26 @@
     window.location = '/agents/' + data.id;
   });
 
+  document.getElementById('search').addEventListener('input', e => {
+    const q = e.target.value.trim().toLowerCase();
+    let visible = 0;
+    document.querySelectorAll('.agent-card').forEach(card => {
+      // hide the "new" cards while searching
+      const match = card.dataset.search ? card.dataset.search.includes(q) : !q;
+      card.style.display = match ? '' : 'none';
+      if (match && card.dataset.search) visible++;
+    });
+    document.getElementById('emptySearch').classList.toggle('d-none', !q || visible > 0);
+  });
+
+  api('/api/config').then(cfg => {
+    CONFIG = cfg;
+    render();
+    // sidebar "+" links land here with ?new=agent / ?new=team
+    const wanted = new URLSearchParams(location.search).get('new');
+    if (wanted) history.replaceState(null, '', '/');
+    if (wanted === 'agent') openPresets();
+    if (wanted === 'team') openTeamModal();
+  });
+</script>
+{% endblock %}
