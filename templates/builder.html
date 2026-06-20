@@ -121,3 +121,26 @@
 {% endblock %}
 
 {% block scripts %}
+<script>
+  const KIND = '{{ kind }}';
+  const ID = '{{ target_id }}';
+  const TARGET = `${KIND}:${ID}`;
+  let CONFIG = null;
+  let dirty = false;
+
+  const $ = id => document.getElementById(id);
+
+  function modelOptions(select, value) {
+    // group by provider, reads nicer than one long list
+    const groups = {};
+    CONFIG.models.forEach(m => (groups[m.provider] ||= []).push(m.key));
+    select.innerHTML = Object.entries(groups).map(([provider, keys]) =>
+      `<optgroup label="${provider}">${keys.map(k => `<option value="${k}">${k}</option>`).join('')}</optgroup>`
+    ).join('');
+    // model got removed from the list but the agent still uses it
+    if (value && !CONFIG.models.find(m => m.key === value)) {
+      select.innerHTML += `<option value="${value}">${value} (unknown)</option>`;
+    }
+    select.value = value;
+  }
+
