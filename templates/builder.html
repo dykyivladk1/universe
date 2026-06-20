@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="topbar">
+  <div class="title">
+    <a class="btn btn-ghost btn-icon d-md-none" href="/" title="Dashboard"><i class="fas fa-bars"></i></a>
+    <span class="crumb"><a href="/">{{ 'Agents' if kind == 'agent' else 'Teams' }}</a> /</span>
+    <span id="headAvatar"></span>
+    <span id="crumbName"></span>
+  </div>
+  <div class="actions">
+    <span class="save-state" id="saveState">Saved</span>
+    {% if kind == 'agent' %}
+    <button class="btn btn-ghost btn-icon" id="duplicateBtn" title="Duplicate"><i class="fas fa-clone"></i></button>
+    {% endif %}
+    <button class="btn btn-ghost btn-icon btn-danger" id="deleteBtn" title="Delete"><i class="fas fa-trash"></i></button>
+    <a class="btn" href="/c/{{ kind }}:{{ target_id }}"><i class="fas fa-comment"></i>Open chat</a>
+    <button class="btn btn-primary" id="saveBtn"><i class="fas fa-check"></i>Save</button>
+  </div>
+</div>
+
+<div class="builder">
+  <!-- left: configuration -->
+  <div class="builder-config">
+    <div class="form-error" id="formError"></div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <div class="icon"><i class="fas fa-id-card"></i></div>
+        <h3>Identity</h3>
+      </div>
+      <label class="form-label">Name</label>
+      <input class="form-control mb-3" id="name" data-field />
+      <label class="form-label">Description</label>
+      <input class="form-control" id="description" data-field
+        placeholder="What is this {{ kind }} for? One sentence." />
+      <div class="form-text">Shown on the dashboard{{ ', and team supervisors use it to pick who answers' if kind == 'agent' }}.</div>
+    </div>
+
+    {% if kind == 'agent' %}
+    <div class="panel">
+      <div class="panel-head">
+        <div class="icon"><i class="fas fa-microchip"></i></div>
+        <h3>Model</h3>
+      </div>
+      <div class="row g-3">
+        <div class="col-sm-7">
+          <label class="form-label">Model</label>
+          <select class="form-select" id="model" data-field></select>
+        </div>
+        <div class="col-sm-5">
+          <label class="form-label">Temperature</label>
+          <div class="temp-row">
+            <input type="range" class="form-range" id="temperature" min="0" max="1.5" step="0.1" data-field />
+            <span class="temp-value" id="tempValue"></span>
+          </div>
+        </div>
+      </div>
+      <div class="form-text">Low temperature = focused and repeatable, high = more creative. Reasoning models ignore it.</div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <div class="icon"><i class="fas fa-scroll"></i></div>
+        <h3>Instructions</h3>
+        <span class="hint" id="promptCount"></span>
+      </div>
+      <textarea class="form-control code prompt" id="system_prompt" data-field
+        placeholder="Who is this agent, what should it do, what should it never do..."></textarea>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <div class="icon"><i class="fas fa-bolt"></i></div>
+        <h3>Tools</h3>
+        <span class="hint" id="toolCount"></span>
+      </div>
+      <div class="option-list" id="tools"></div>
+    </div>
+    {% else %}
+    <div class="panel">
+      <div class="panel-head">
+        <div class="icon"><i class="fas fa-route"></i></div>
+        <h3>Supervisor</h3>
+      </div>
+      <label class="form-label">Router model</label>
+      <select class="form-select" id="router_model" data-field></select>
+      <div class="form-text">Only decides who answers next, so a small fast model is usually enough.</div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <div class="icon"><i class="fas fa-users"></i></div>
+        <h3>Members</h3>
+        <span class="hint" id="memberCount"></span>
+      </div>
+      <div class="option-list" id="members"></div>
+      <div class="form-text">Good descriptions on the agents = better routing.</div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- right: playground -->
+  <div class="builder-playground">
+    <div class="playground-head">
+      <span class="label"><span class="dot"></span><strong>Playground</strong> unsaved changes are saved when you send</span>
+      <button class="btn btn-ghost" id="resetBtn"><i class="fas fa-rotate-left"></i>Reset</button>
+    </div>
+    <div class="chat-messages" id="messages"></div>
+    <div class="composer">
+      <div class="composer-inner">
+        <div class="composer-box">
+          <textarea class="chat-textarea" id="input" rows="1" placeholder="Try your {{ kind }}..."></textarea>
+          <button class="send-btn" id="sendBtn" disabled><i class="fas fa-arrow-up"></i></button>
+          <button class="send-btn stop d-none" id="stopBtn" title="Stop"><i class="fas fa-stop"></i></button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
