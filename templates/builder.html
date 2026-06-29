@@ -144,3 +144,37 @@
     select.value = value;
   }
 
+  function updateCounts() {
+    if (KIND === 'agent') {
+      $('promptCount').textContent = $('system_prompt').value.length + ' chars';
+      $('toolCount').textContent = document.querySelectorAll('#tools input:checked').length + ' enabled';
+      $('tempValue').textContent = parseFloat($('temperature').value).toFixed(1);
+    } else {
+      $('memberCount').textContent = document.querySelectorAll('#members input:checked').length + ' selected';
+    }
+  }
+
+  function updateHeader() {
+    const name = $('name').value || 'Untitled';
+    $('crumbName').textContent = name;
+    $('headAvatar').innerHTML = avatarHtml(KIND === 'team' ? TARGET : ID, name, 'sm');
+    document.title = name + ' - Universe';
+  }
+
+  function fillAgentForm(a) {
+    $('name').value = a.name;
+    $('description').value = a.description || '';
+    modelOptions($('model'), a.model);
+    $('temperature').value = a.temperature ?? 0.7;
+    $('system_prompt').value = a.system_prompt || '';
+
+    $('tools').innerHTML = CONFIG.tools.map(t => `
+      <label class="option">
+        <input class="form-check-input" type="checkbox" value="${t.name}" data-field ${a.tools.includes(t.name) ? 'checked' : ''}>
+        <div>
+          <div class="title"><span class="mono">${escapeHtml(t.name)}</span></div>
+          <div class="desc">${escapeHtml(t.description)}</div>
+        </div>
+      </label>`).join('');
+  }
+
