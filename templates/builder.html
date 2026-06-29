@@ -214,3 +214,32 @@
     };
   }
 
+  function setDirty(value) {
+    dirty = value;
+    $('saveState').textContent = value ? 'Unsaved changes' : 'Saved';
+    $('saveState').classList.toggle('dirty', value);
+  }
+
+  async function save() {
+    $('formError').textContent = '';
+    try {
+      const data = await api(`/api/${KIND}s/${ID}`, { method: 'PUT', body: readForm() });
+      // keep our copy fresh so the playground shows the new name/model
+      if (KIND === 'agent') CONFIG.agents[ID] = data.agent;
+      else CONFIG.teams[ID] = data.team;
+      setDirty(false);
+      return true;
+    } catch (err) {
+      $('formError').textContent = err.message;
+      return false;
+    }
+  }
+
+  // anything with data-field marks the form as dirty
+  document.querySelector('.builder-config').addEventListener('input', e => {
+    if (!e.target.matches('[data-field]')) return;
+    setDirty(true);
+    updateCounts();
+    if (e.target.id === 'name') updateHeader();
+  });
+
