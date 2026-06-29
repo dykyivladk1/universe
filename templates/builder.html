@@ -178,3 +178,39 @@
       </label>`).join('');
   }
 
+  function fillTeamForm(t) {
+    $('name').value = t.name;
+    $('description').value = t.description || '';
+    modelOptions($('router_model'), t.router_model);
+
+    $('members').innerHTML = Object.entries(CONFIG.agents).map(([id, a]) => `
+      <label class="option">
+        <input class="form-check-input" type="checkbox" value="${id}" data-field ${t.members.includes(id) ? 'checked' : ''}>
+        ${avatarHtml(id, a.name, 'sm')}
+        <div style="flex: 1">
+          <div class="title">${escapeHtml(a.name)} <span class="subdued mono" style="font-size: 0.72rem">${escapeHtml(a.model)}</span></div>
+          <div class="desc">${escapeHtml(a.description || 'No description')}</div>
+        </div>
+        <a href="/agents/${id}">edit</a>
+      </label>`).join('');
+  }
+
+  function readForm() {
+    if (KIND === 'agent') {
+      return {
+        name: $('name').value.trim(),
+        description: $('description').value.trim(),
+        model: $('model').value,
+        temperature: parseFloat($('temperature').value),
+        system_prompt: $('system_prompt').value,
+        tools: [...document.querySelectorAll('#tools input:checked')].map(i => i.value),
+      };
+    }
+    return {
+      name: $('name').value.trim(),
+      description: $('description').value.trim(),
+      router_model: $('router_model').value,
+      members: [...document.querySelectorAll('#members input:checked')].map(i => i.value),
+    };
+  }
+
