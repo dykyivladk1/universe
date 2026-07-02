@@ -243,3 +243,28 @@
     if (e.target.id === 'name') updateHeader();
   });
 
+  $('saveBtn').addEventListener('click', save);
+  document.addEventListener('keydown', e => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+      e.preventDefault();
+      save();
+    }
+  });
+
+  window.addEventListener('beforeunload', e => {
+    if (dirty) e.preventDefault();
+  });
+
+  $('deleteBtn').addEventListener('click', async () => {
+    if (!confirm(`Delete "${$('name').value}"? This can't be undone.`)) return;
+    await api(`/api/${KIND}s/${ID}`, { method: 'DELETE' });
+    dirty = false;
+    window.location = '/';
+  });
+
+  $('duplicateBtn')?.addEventListener('click', async () => {
+    if (dirty && !(await save())) return;
+    const data = await api(`/api/agents/${ID}/duplicate`, { method: 'POST' });
+    window.location = '/agents/' + data.id;
+  });
+
