@@ -268,3 +268,44 @@
     window.location = '/agents/' + data.id;
   });
 
+  // ---- playground ----
+  function suggestionsFor(tools) {
+    const out = [];
+    if (tools.includes('calculator')) out.push("What's 17.5% of 2,340?");
+    if (tools.includes('fetch_url')) out.push('Summarize https://news.ycombinator.com');
+    if (tools.includes('current_datetime')) out.push('What day is it today?');
+    out.push('What can you help me with?');
+    return out.slice(0, 3);
+  }
+
+  const chat = createChat({
+    messagesEl: $('messages'),
+    inputEl: $('input'),
+    sendBtn: $('sendBtn'),
+    stopBtn: $('stopBtn'),
+    getTarget: () => TARGET,
+    getThread: () => 'playground:' + TARGET,
+    agentInfo: id => CONFIG.agents[id] && { name: CONFIG.agents[id].name, model: CONFIG.agents[id].model },
+    empty: () => {
+      const form = readForm();
+      return {
+        title: form.name || 'Untitled',
+        text: 'Send a message to test. Change the config on the left and try again, no need to save first.',
+        suggestions: KIND === 'agent' ? suggestionsFor(form.tools) : ['What can this team do?'],
+      };
+    },
+    beforeSend: async () => (dirty ? await save() : true),
+  });
+
+  $('resetBtn').addEventListener('click', () => chat.clear());
+
+  api('/api/config').then(cfg => {
+    CONFIG = cfg;
+    const item = KIND === 'agent' ? cfg.agents[ID] : cfg.teams[ID];
+    KIND === 'agent' ? fillAgentForm(item) : fillTeamForm(item);
+    updateHeader();
+    updateCounts();
+    chat.loadHistory();
+  });
+</script>
+{% endblock %}
