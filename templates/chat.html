@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="topbar">
+  <div class="title">
+    <a class="btn btn-ghost btn-icon d-md-none" href="/" title="Dashboard"><i class="fas fa-bars"></i></a>
+    <span id="headAvatar"></span>
+    <span id="headName"></span>
+    <span id="headMeta" class="d-none d-md-inline-flex gap-1"></span>
+  </div>
+  <div class="actions">
+    <button class="btn btn-ghost" id="clearChat" title="Clear this chat"><i class="fas fa-broom"></i>Clear</button>
+    <a class="btn" id="buildLink"><i class="fas fa-sliders"></i>Build</a>
+  </div>
+</div>
+
+<div class="chat-messages" id="chatMessages"></div>
+
+<div class="composer">
+  <div class="composer-inner">
+    <div class="composer-box">
+      <textarea class="chat-textarea" id="messageInput" rows="1" placeholder="Message..."></textarea>
+      <button class="send-btn" id="sendMessageBtn" disabled><i class="fas fa-arrow-up"></i></button>
+      <button class="send-btn stop d-none" id="stopGenerationBtn" title="Stop"><i class="fas fa-stop"></i></button>
+    </div>
+    <div class="composer-hint">
+      <span><span class="kbd">Enter</span> send · <span class="kbd">Shift+Enter</span> new line · <span class="kbd">Alt+1..9</span> switch agent</span>
+      <span><span class="kbd">/copy</span> copies the last code block</span>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
