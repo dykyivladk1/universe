@@ -58,3 +58,27 @@
     },
   });
 
+  function renderHeader() {
+    const item = KIND === 'agent' ? CONFIG.agents[ID] : CONFIG.teams[ID];
+    document.getElementById('headAvatar').innerHTML = avatarHtml(KIND === 'team' ? TARGET : ID, item.name, 'md');
+    document.getElementById('headName').textContent = item.name;
+    document.getElementById('buildLink').href = `/${KIND}s/${ID}`;
+    document.title = item.name + ' - Universe';
+
+    const chips = KIND === 'agent'
+      ? [`<span class="chip chip-accent">${escapeHtml(item.model)}</span>`,
+         ...item.tools.map(t => `<span class="chip"><i class="fas fa-bolt"></i>${escapeHtml(t)}</span>`)]
+      : item.members.map(m => `<span class="chip">${escapeHtml(CONFIG.agents[m]?.name || m)}</span>`);
+    document.getElementById('headMeta').innerHTML = chips.join('');
+
+    input.placeholder = `Message ${item.name}...`;
+  }
+
+  document.getElementById('clearChat').addEventListener('click', () => chat.clear());
+
+  // ---- keyboard stuff ----
+  function copyLatestCodeBlock() {
+    const blocks = document.querySelectorAll('#chatMessages pre code');
+    if (blocks.length) navigator.clipboard.writeText(blocks[blocks.length - 1].textContent);
+  }
+
