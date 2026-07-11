@@ -32,3 +32,29 @@
 {% endblock %}
 
 {% block scripts %}
+<script>
+  const TARGET = '{{ target }}';
+  const [KIND, ID] = TARGET.split(':');
+  let CONFIG = null;
+
+  const input = document.getElementById('messageInput');
+
+  const chat = createChat({
+    messagesEl: document.getElementById('chatMessages'),
+    inputEl: input,
+    sendBtn: document.getElementById('sendMessageBtn'),
+    stopBtn: document.getElementById('stopGenerationBtn'),
+    getTarget: () => TARGET,
+    agentInfo: id => CONFIG.agents[id] && { name: CONFIG.agents[id].name, model: CONFIG.agents[id].model },
+    empty: () => {
+      const item = KIND === 'agent' ? CONFIG.agents[ID] : CONFIG.teams[ID];
+      return {
+        title: item.name,
+        text: item.description || (KIND === 'team' ? 'A team of agents.' : 'Ask anything.'),
+        suggestions: KIND === 'agent' && item.tools.includes('calculator')
+          ? ["What's 17.5% of 2,340?", 'What can you help me with?']
+          : ['What can you help me with?'],
+      };
+    },
+  });
+
