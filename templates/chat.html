@@ -82,3 +82,46 @@
     if (blocks.length) navigator.clipboard.writeText(blocks[blocks.length - 1].textContent);
   }
 
+  input.addEventListener('keydown', e => {
+    // "/copy" copies the last code block instead of sending it
+    if (e.key === 'Enter' && input.value.trim() === '/copy') {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      input.value = '';
+      copyLatestCodeBlock();
+    }
+  }, true);
+
+  document.addEventListener('keydown', e => {
+    // Alt+N opens the Nth agent/team from the sidebar
+    if (e.altKey && !e.ctrlKey && !e.metaKey && e.code.startsWith('Digit')) {
+      const links = document.querySelectorAll('.sidebar a.nav-link[href^="/c/"]');
+      const link = links[Number(e.code.replace('Digit', '')) - 1];
+      if (link) {
+        e.preventDefault();
+        window.location = link.href;
+      }
+    }
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'c') {
+      e.preventDefault();
+      copyLatestCodeBlock();
+    }
+    if (e.key === '/' && document.activeElement !== input) {
+      e.preventDefault();
+      input.focus();
+    }
+  });
+
+  api('/api/config').then(cfg => {
+    CONFIG = cfg;
+    const item = KIND === 'agent' ? cfg.agents[ID] : cfg.teams[ID];
+    if (!item) {
+      window.location = '/';
+      return;
+    }
+    renderHeader();
+    chat.loadHistory();
+    input.focus();
+  });
+</script>
+{% endblock %}
