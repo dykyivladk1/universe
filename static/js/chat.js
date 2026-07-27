@@ -39,3 +39,20 @@ async function api(url, options = {}) {
   return data;
 }
 
+function addCopyButtonsToCodeBlocks(container) {
+  container.querySelectorAll('pre code').forEach(codeBlock => {
+    const pre = codeBlock.parentNode;
+    if (pre.querySelector('.code-copy-btn')) return;
+    const btn = document.createElement('button');
+    btn.className = 'code-copy-btn';
+    btn.innerHTML = '<i class="fas fa-copy"></i> Copy';
+    btn.addEventListener('click', () => {
+      navigator.clipboard.writeText(codeBlock.textContent).then(() => {
+        btn.innerHTML = '<i class="fas fa-check"></i> Copied';
+        setTimeout(() => { btn.innerHTML = '<i class="fas fa-copy"></i> Copy'; }, 2000);
+      });
+    });
+    pre.appendChild(btn);
+  });
+}
+
