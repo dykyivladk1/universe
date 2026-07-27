@@ -28,3 +28,14 @@ function avatarHtml(id, name, size = '') {
   return `<span class="avatar ${size} ${avatarColor(id || name || '')}">${escapeHtml(initials(name))}</span>`;
 }
 
+async function api(url, options = {}) {
+  const res = await fetch(url, {
+    headers: { 'Content-Type': 'application/json' },
+    ...options,
+    body: options.body ? JSON.stringify(options.body) : undefined,
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
+  return data;
+}
+
