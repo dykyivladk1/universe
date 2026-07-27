@@ -21,3 +21,10 @@ function initials(name) {
   return (name || '?').split(/\s+/).slice(0, 2).map(w => w[0]).join('').toUpperCase();
 }
 
+function avatarHtml(id, name, size = '') {
+  if (id && id.startsWith('team:')) {
+    return `<span class="avatar ${size} av-team"><i class="fas fa-users"></i></span>`;
+  }
+  return `<span class="avatar ${size} ${avatarColor(id || name || '')}">${escapeHtml(initials(name))}</span>`;
+}
+
