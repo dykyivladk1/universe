@@ -56,3 +56,8 @@ function addCopyButtonsToCodeBlocks(container) {
   });
 }
 
+function polish(el) {
+  Prism.highlightAllUnder(el);
+  addCopyButtonsToCodeBlocks(el);
+}
+
