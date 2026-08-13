@@ -345,3 +345,22 @@ textarea.form-control { line-height: 1.55; }
 }
 
 
+/* ------------------------------------------------------------------ */
+/* modal (bootstrap is light by default)                               */
+/* ------------------------------------------------------------------ */
+
+.modal-backdrop.show { opacity: 0.7; }
+.modal-content {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+}
+.modal-header, .modal-footer { border-color: var(--border); padding: 16px 22px; }
+.modal-body { padding: 20px 22px; }
+.modal-title { font-size: 1rem; font-weight: 600; }
+.modal-subtitle { font-size: 0.83rem; color: var(--text-muted); margin-top: 2px; }
+.btn-close { filter: invert(1) grayscale(1); opacity: 0.5; }
+
+
