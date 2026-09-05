@@ -844,3 +844,76 @@ textarea.form-control { line-height: 1.55; }
 }
 
 
+/* ------------------------------------------------------------------ */
+/* markdown inside messages                                            */
+/* ------------------------------------------------------------------ */
+
+.markdown-content { line-height: 1.7; overflow-wrap: anywhere; }
+.markdown-content > *:first-child { margin-top: 0; }
+.markdown-content > *:last-child { margin-bottom: 0; }
+.markdown-content p, .markdown-content ul, .markdown-content ol { margin-bottom: 0.8em; }
+.markdown-content li { margin-bottom: 0.25em; }
+.markdown-content h1, .markdown-content h2, .markdown-content h3, .markdown-content h4 {
+  font-weight: 600;
+  margin: 1.2em 0 0.5em;
+  letter-spacing: -0.01em;
+}
+.markdown-content h1 { font-size: 1.3rem; }
+.markdown-content h2 { font-size: 1.15rem; }
+.markdown-content h3 { font-size: 1rem; }
+.markdown-content strong { color: #fff; }
+.markdown-content blockquote {
+  border-left: 3px solid var(--border-strong);
+  padding-left: 14px;
+  color: var(--text-muted);
+  margin: 0 0 0.8em;
+}
+.markdown-content hr { border-color: var(--border-strong); }
+.markdown-content :not(pre) > code {
+  font-family: var(--mono);
+  font-size: 0.85em;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  padding: 1px 6px;
+  border-radius: 5px;
+  color: var(--accent-hover);
+}
+.markdown-content pre {
+  position: relative;
+  background: #0a0c10 !important;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 18px !important;
+  margin: 0.4em 0 1em !important;
+  font-size: 0.84rem;
+  overflow-x: auto;
+}
+.markdown-content pre code { font-family: var(--mono) !important; text-shadow: none !important; }
+.markdown-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1em;
+  font-size: 0.88rem;
+}
+.markdown-content th, .markdown-content td { padding: 8px 12px; border: 1px solid var(--border); }
+.markdown-content th { background: var(--surface-2); font-weight: 600; text-align: left; }
+.markdown-content td { color: var(--text-muted); }
+
+.code-copy-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-family: var(--font);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 3px 8px;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.markdown-content pre:hover .code-copy-btn { opacity: 1; }
+.code-copy-btn:hover { color: var(--accent); }
+
+
