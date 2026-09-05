@@ -917,3 +917,24 @@ textarea.form-control { line-height: 1.55; }
 .code-copy-btn:hover { color: var(--accent); }
 
 
+/* ------------------------------------------------------------------ */
+/* small screens                                                       */
+/* ------------------------------------------------------------------ */
+
+@media (max-width: 1000px) {
+  .stats { grid-template-columns: repeat(2, 1fr); }
+  .builder { flex-direction: column; overflow-y: auto; }
+  .builder-config { width: 100%; max-width: none; min-width: 0; border-right: none; overflow: visible; }
+  .builder-playground { min-height: 80vh; }
+}
+
+@media (max-width: 760px) {
+  .sidebar { display: none; }
+  .topbar { padding: 0 16px; }
+  .page { padding: 24px 16px 48px; }
+  .hero { flex-direction: column; align-items: flex-start; }
+  .search { width: 100%; }
+  .chat-messages, .composer { padding-left: 14px; padding-right: 14px; }
+  .composer-hint { display: none; }
+  .message-user .body { max-width: 90%; }
+}
